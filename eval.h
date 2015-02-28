@@ -33,9 +33,13 @@
 #define MG_BISHOP_PAIR					25
 #define EG_BISHOP_PAIR					65
 
-//-- Mobility
+//-- Rook Mobility
 #define ROOK_MOBILITY_MIDDLEGAME		5
 #define ROOK_MOBILITY_ENDGAME			10
+
+//-- Queen Mobility
+#define MG_QUEEN_MOBILITY				1
+#define EG_QUEEN_MOBILITY				5
 
 //-- Connected Knights
 #define MG_CONNECTED_KNIGHTS			10

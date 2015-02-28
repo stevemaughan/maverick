@@ -107,7 +107,34 @@ BOOL test_genmove() {
     generate_moves(position, moves);
     ok = ok && (moves->count == 46);
 
-    //write_move_list(&moves, "movelist.txt");
+	// Chess960 Examples
+	set_fen(position, "Rr4kr/8/8/8/8/8/PPPP4/R1K5 w Ahb -");
+	assert(integrity(position));
+	generate_moves(position, moves);
+	assert(move_list_integrity(position, moves));
+	ok = ok && (moves->count == 18);
+
+	flip_board(position);
+	generate_moves(position, moves);
+	ok = ok && (moves->count == 18);
+
+	set_fen(position, "1r1kbb1r/1pp2ppp/3npn2/3pN3/1Q3P2/4PN2/2PP2PP/qR1KBB1R w HBhb -");
+	assert(integrity(position));
+	generate_legal_moves(position, moves);
+	assert(move_list_integrity(position, moves));
+	ok = ok && (moves->count == 48);
+
+	set_fen(position, "rkrbqnb1/pp2p2p/3p1pp1/2p1nP2/2P1P3/3P2N1/PP4PP/RKRBQNB1 w CAca -");
+	assert(integrity(position));
+	generate_legal_moves(position, moves);
+	write_move_list(moves, "movelist.txt");
+	assert(move_list_integrity(position, moves));
+	ok = ok && (moves->count == 34);
+
+	flip_board(position);
+	generate_legal_moves(position, moves);
+	ok = ok && (moves->count == 34);
+
 
     return ok;
 }
@@ -153,6 +180,41 @@ BOOL test_make_unmake() {
     ok &= integrity(position);
 
     return ok;
+}
+
+BOOL test_perft960() {
+
+	BOOL ok = TRUE;
+	int i;
+	t_nodes n = 0;
+
+	if (!uci.engine_initialized)
+		init_engine(position);
+
+	//--Position 1
+	//for (i = 0; i <= 1; i++) {
+	//	set_fen(position, "R3rkrR/8/8/8/8/8/8/r3RKRr w EGeg - 0 1");
+	//	n = perft(position, 5);
+	//	ok &= (n == 12667098);
+	//	global_nodes += n;
+	//	flip_board(position);
+	//}
+
+	//--Position 2
+	//for (i = 0; i <= 1; i++) {
+		set_fen(position, "qr1kbb1r/1pp2ppp/3npn2/3pN3/1p3P2/4PN2/P1PP2PP/QR1KBB1R w HBhb -");
+		n = perft(position, 6);
+		ok &= (n == 3206947488);
+	//	global_nodes += n;
+	//	flip_board(position);
+	//}
+
+	if (ok)
+		printf("Everything seems Fine - all PERFT 960 scores are correct\n");
+	else
+		printf("**ERROR** with PERFT 960 scores\n");
+
+	return ok;
 }
 
 BOOL test_perft() {
@@ -457,7 +519,7 @@ BOOL test_eval() {
 	flip_board(position);
 	ok &= (v == evaluate(position, eval));
 
-	set_fen(position, "2k5/p1pp4/1p3B2/8/3Q1R2/2N5/5P2/5K2 w - -");
+	set_fen(position, "3b2k1/ppp4p/4P1p1/2n1p2b/2B4B/2PP4/PP2N1PP/4K3 w - -");
 	v = evaluate(position, eval);
 	flip_board(position);
 	ok &= (v == evaluate(position, eval));
@@ -558,13 +620,31 @@ BOOL test_search()
 	set_hash(512);
 	set_own_book(TRUE);
 
-	uci_position(position, "position fen r4rk1/1ppb2b1/n2p2q1/pN1Pp1Nn/2P1Pp2/7P/PPB1QPP1/2KR3R w - -");
+	uci_new_game(position);
+
+	uci_position(position, "position fen rbbqnknr/pppppppp/8/8/8/8/PPPPPPPP/RBBQNKNR w HAha - moves c2c4 c7c5 g1f3 e7e5 b1e4 e8d6 d2d3 d6e4 d3e4 g8e7 c1e3 b7b6 d1d3 c8b7 a1d1 b7c6 g2g4 f7f6 h1g1 h7h5 e3d2 h5g4 g1g4 d8c8 g4g2 c8a6 a2a3 b6b5 c4b5 c6b5 d3e3 d7d6 d1c1 b8c7 h2h4 a6b7 b2b4 c7b6 a3a4 b5a4 b4c5 b6c5 e3d3 a4b5 d3c2 a7a5 d2c3 a8c8 c2b2 b5c6");
 	uci_go("go infinite");
 
 	while (uci.engine_state != UCI_ENGINE_WAITING)
 		Sleep(1);
 
-    return TRUE;
+	uci_new_game(position);
+
+	uci_setoption("setoption name UCI_Chess960 value true");
+
+	uci_position(position, "position fen qrknrnbb/pppppppp/8/8/8/8/PPPPPPPP/QRKNRNBB w EBeb -");
+	uci_go("go depth 6");
+
+	while (uci.engine_state != UCI_ENGINE_WAITING)
+		Sleep(1);
+
+	uci_position(position, "position fen qrknrnbb/pppppppp/8/8/8/8/PPPPPPPP/QRKNRNBB w EBeb - moves f2f4 g7g6 e2e4 f8e6 f4f5 e6d4 c2c3 d4c6 f1e3 h8g7 d1f2 e7e6 g2g4 f7f6 b2b4 b7b5 a2a4 e6f5 g4f5 a7a5 a4b5 b8b5 d2d4");
+	uci_go("go infinite");
+
+	while (uci.engine_state != UCI_ENGINE_WAITING)
+		Sleep(1);
+	
+	return TRUE;
 }
 
 BOOL test_book()

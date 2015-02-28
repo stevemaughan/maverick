@@ -64,6 +64,8 @@ void clear_board(struct t_board *board);
 void new_game(struct t_board *board);
 t_chess_square name_to_index(char *name);
 char *move_as_str(struct t_move_record *move);
+t_chess_square kingside_rook(struct t_board *board, t_chess_color color);
+t_chess_square queenside_rook(struct t_board *board, t_chess_color color);
 BOOL integrity(struct t_board *board);
 void init_can_move();
 void init_perft_pv_data();
@@ -71,11 +73,13 @@ void init_perft_pv_data();
 // movedirectory.c
 void init_move_directory();
 t_move_record *lookup_move(struct t_board *board, char *move_string);
-void configure_castling(int *i);
+void configure_castling();
 void configure_pawn_push(int *i);
 void configure_pawn_capture(int *i);
 void configure_piece_moves(int *i);
+void init_directory_castling_delta();
 void clear_history();
+void init_960_castling(struct t_board *board, t_chess_square king_square, t_chess_square rook_square);
 
 // fen.c
 void set_fen(struct t_board *board, char *epd);
@@ -233,6 +237,7 @@ BOOL test_search();
 BOOL test_book();
 BOOL test_hash_table();
 BOOL test_ep_capture();
+BOOL test_perft960();
 
 //--Perft
 t_nodes perft(struct t_board *board, int depth);

@@ -109,7 +109,7 @@ void write_move_list(struct t_move_list *move_list, char filename[1024])
 {
     FILE *tfile = NULL;
     int i;
-    char s[20];
+    char s[50];
 
     tfile = fopen(filename, "w");
     for (i = 0; i < move_list->count; i++) {

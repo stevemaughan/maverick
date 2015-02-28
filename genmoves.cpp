@@ -93,28 +93,24 @@ void generate_moves(struct t_board *board, struct t_move_list *move_list) {
     //+---------------------------------+
 
     if (board->castling && !board->in_check) {
-        if (board->chess960) {
 
-        }
-        else {
-            //-- Kingside O-O
-            castle_index = (to_move * 2);
-            if ((board->castling >> castle_index) & (uchar)1) {
-                move = &xmove_list[castle_index];
-                if (!(_all_pieces & castle[castle_index].possible)) {
-                    move_list->move[move_list->count++] = &xmove_list[castle_index];
-                }
-            }
-            //-- Queenside O-O-O
-            castle_index++;
-            if ((board->castling >> castle_index) & (uchar)1) {
-                move = &xmove_list[castle_index];
-                if (!(_all_pieces & castle[castle_index].possible)) {
-                    move_list->move[move_list->count++] = &xmove_list[castle_index];
-                }
-            }
-        }
-    }
+		//-- Kingside O-O
+		castle_index = (to_move * 2);
+		if ((board->castling >> castle_index) & (uchar)1) {
+			move = &xmove_list[castle_index];
+			if (!(_all_pieces & castle[castle_index].possible)) {
+				move_list->move[move_list->count++] = &xmove_list[castle_index];
+			}
+		}
+		//-- Queenside O-O-O
+		castle_index++;
+		if ((board->castling >> castle_index) & (uchar)1) {
+			move = &xmove_list[castle_index];
+			if (!(_all_pieces & castle[castle_index].possible)) {
+				move_list->move[move_list->count++] = &xmove_list[castle_index];
+			}
+		}
+	}
 
     //+---------------------------------+
     //| Pawn Moves                      |
@@ -865,27 +861,23 @@ void generate_no_capture_no_checks(struct t_board *board, struct t_move_list *mo
     //+---------------------------------+
 
     if (board->castling && !board->in_check) {
-        if (board->chess960) {
 
-        }
-        else {
-            //-- Kingside O-O
-            castle_index = (to_move * 2);
-            if ((board->castling >> castle_index) & (uchar)1) {
-                move = &xmove_list[castle_index];
-                if (!(_all_pieces & castle[castle_index].possible)) {
-                    move_list->move[move_list->count++] = &xmove_list[castle_index];
-                }
-            }
-            //-- Queenside O-O-O
-            castle_index++;
-            if ((board->castling >> castle_index) & (uchar)1) {
-                move = &xmove_list[castle_index];
-                if (!(_all_pieces & castle[castle_index].possible)) {
-                    move_list->move[move_list->count++] = &xmove_list[castle_index];
-                }
-            }
-        }
+		//-- Kingside O-O
+		castle_index = (to_move * 2);
+		if ((board->castling >> castle_index) & (uchar)1) {
+			move = &xmove_list[castle_index];
+			if (!(_all_pieces & castle[castle_index].possible)) {
+				move_list->move[move_list->count++] = &xmove_list[castle_index];
+			}
+		}
+		//-- Queenside O-O-O
+		castle_index++;
+		if ((board->castling >> castle_index) & (uchar)1) {
+			move = &xmove_list[castle_index];
+			if (!(_all_pieces & castle[castle_index].possible)) {
+				move_list->move[move_list->count++] = &xmove_list[castle_index];
+			}
+		}
     }
 
     //+---------------------------------+
@@ -1063,27 +1055,23 @@ void generate_quiet_moves(struct t_board *board, struct t_move_list *move_list) 
     //+---------------------------------+
 
     if (board->castling && !board->in_check) {
-        if (board->chess960) {
 
-        }
-        else {
-            //-- Kingside O-O
-            castle_index = (to_move * 2);
-            if ((board->castling >> castle_index) & (uchar) 1) {
-                move = &xmove_list[castle_index];
-                if (!(_all_pieces & castle[castle_index].possible)) {
-                    move_list->move[move_list->count++] = &xmove_list[castle_index];
-                }
-            }
-            //-- Queenside O-O-O
-            castle_index++;
-            if ((board->castling >> castle_index) & (uchar) 1) {
-                move = &xmove_list[castle_index];
-                if (!(_all_pieces & castle[castle_index].possible)) {
-                    move_list->move[move_list->count++] = &xmove_list[castle_index];
-                }
-            }
-        }
+		//-- Kingside O-O
+		castle_index = (to_move * 2);
+		if ((board->castling >> castle_index) & (uchar)1) {
+			move = &xmove_list[castle_index];
+			if (!(_all_pieces & castle[castle_index].possible)) {
+				move_list->move[move_list->count++] = &xmove_list[castle_index];
+			}
+		}
+		//-- Queenside O-O-O
+		castle_index++;
+		if ((board->castling >> castle_index) & (uchar)1) {
+			move = &xmove_list[castle_index];
+			if (!(_all_pieces & castle[castle_index].possible)) {
+				move_list->move[move_list->count++] = &xmove_list[castle_index];
+			}
+		}
     }
 
     //+---------------------------------+
@@ -1237,7 +1225,7 @@ BOOL move_list_integrity(struct t_board *board, struct t_move_list *move_list) {
             write_move_list(moves, "move-list.txt");
             return FALSE;
         }
-        if ((board->square[move->to_square] != BLANK) && (board->square[move->to_square] != move->captured))
+		if (((board->square[move->to_square] != BLANK) && (board->square[move->to_square] != move->captured)) && !(board->chess960 && move->move_type == MOVE_CASTLE))
             return FALSE;
     }
     return TRUE;

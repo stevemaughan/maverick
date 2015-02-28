@@ -31,7 +31,7 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
     //-- Should we call qsearch?
     if (depth <= 0 && !board->in_check) {
         e = qsearch_plus(board, ply, depth, alpha, beta);
-		assert(e > -CHECKMATE && e < CHECKMATE);
+		assert(e >= -CHECKMATE && e <= CHECKMATE);
 		return e;
     }
 
@@ -46,9 +46,9 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
     struct t_pv_data *pv = &(board->pv_data[ply]);
 
     //-- Has the maximum depth been reached
-    if (ply > MAXPLY) {
+    if (ply >= MAXPLY || uci.stop) {
         pv->best_line_length = ply;
-		assert(pv->eval->static_score > -CHECKMATE && pv->eval->static_score < CHECKMATE);
+		assert(pv->eval->static_score >= -CHECKMATE && pv->eval->static_score <= CHECKMATE);
         return pv->eval->static_score;
     }
 
@@ -60,11 +60,11 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 
 	//-- Mate Distance Pruning
 	if (CHECKMATE - ply <= alpha){
-		assert(alpha > -CHECKMATE && alpha < CHECKMATE);
+		assert(alpha >= -CHECKMATE && alpha <= CHECKMATE);
 		return alpha;
 	}
 	else if (-CHECKMATE + ply >= beta){
-		assert(beta > -CHECKMATE && beta < CHECKMATE);
+		assert(beta >= -CHECKMATE && beta <= CHECKMATE);
 		return beta;
 	}
 
@@ -72,7 +72,7 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
     struct t_pv_data *next_pv = &(board->pv_data[ply + 1]);
     int reduction;
 
-    t_chess_value					best_score = -CHESS_INFINITY;
+    t_chess_value					best_score = -CHECKMATE;
     t_chess_value					a = alpha;
     t_chess_value					b = beta;
 
@@ -92,14 +92,14 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 			//-- Score in hash table is at least as good as beta
 			if (hash_record->bound != HASH_UPPER && hash_score >= beta){
 				hash_record->age = hash_age;
-				assert(hash_score > -CHECKMATE && hash_score < CHECKMATE);
+				assert(hash_score >= -CHECKMATE && hash_score <= CHECKMATE);
 				return hash_score;
 			}
 
 			//-- Score is worse than alpha
 			if (hash_record->bound != HASH_LOWER && hash_score <= alpha){
 				hash_record->age = hash_age;
-				assert(hash_score > -CHECKMATE && hash_score < CHECKMATE);
+				assert(hash_score >= -CHECKMATE && hash_score <= CHECKMATE);
 				return hash_score;
 			}
 
@@ -108,7 +108,7 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 				hash_record->age = hash_age;
 				pv->best_line_length = ply;
 				update_best_line_from_hash(board, ply);
-				assert(hash_score > -CHECKMATE && hash_score < CHECKMATE);
+				assert(hash_score >= -CHECKMATE && hash_score <= CHECKMATE);
 				return hash_score;
 			}
 		}
@@ -139,7 +139,7 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 		//-- is it good enough for a cut-off?
 		if (e >= beta){
 			poke(board->hash, e, ply, depth, HASH_LOWER, NULL);
-			assert(e > -CHECKMATE && e < CHECKMATE);
+			assert(e >= -CHECKMATE && e <= CHECKMATE);
 			return e;
 		}
 	}
@@ -172,7 +172,6 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
         // Are we in checkmate?
         if (moves->count == 0) {
             pv->best_line_length = ply;
-			assert(-CHECKMATE + ply > -CHECKMATE && -CHECKMATE + ply < CHECKMATE);
 			return -CHECKMATE + ply;
         }
 		order_evade_check(board, moves, ply);
@@ -202,7 +201,7 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 			//-- Is it good enough for a cutoff?
 			if (e >= beta){
 				poke(board->hash, e, ply, depth, HASH_LOWER, moves->current_move);
-				assert(e > -CHECKMATE && e < CHECKMATE);
+				assert(e >= -CHECKMATE && e <= CHECKMATE);
 				return e;
 			}
 
@@ -266,7 +265,7 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 
 			//-- Store in the hash table
 			poke(board->hash, e, ply, depth, HASH_LOWER, pv->current_move);
-			assert(e > -CHECKMATE && e < CHECKMATE);
+			assert(e >= -CHECKMATE && e <= CHECKMATE);
 			return e;
         }
 
@@ -303,7 +302,7 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 		poke(board->hash, best_score, ply, depth, HASH_UPPER, NULL);
 
     // Return Best Score found
-	assert(best_score > -CHECKMATE && best_score < CHECKMATE);
+	assert(best_score >= -CHECKMATE && best_score <= CHECKMATE);
 	return best_score;
 
 }
@@ -315,7 +314,7 @@ t_chess_value qsearch_plus(struct t_board *board, int ply, int depth, t_chess_va
 	struct t_pv_data *pv = &(board->pv_data[ply]);
 
 	//-- Has the maximum depth been reached
-	if (ply > MAXPLY || uci.stop)
+	if (ply >= MAXPLY || uci.stop)
 		return pv->eval->static_score;
 
 	//-- Increment the node count
@@ -358,7 +357,7 @@ t_chess_value qsearch_plus(struct t_board *board, int ply, int depth, t_chess_va
 	//-----------------------------------------------
 	if (board->in_check) {
 
-		best_score = -CHESS_INFINITY;
+		best_score = -CHECKMATE;
 
 		//-- Generate moves which get out of check
 		generate_evade_check(board, moves);
@@ -378,7 +377,6 @@ t_chess_value qsearch_plus(struct t_board *board, int ply, int depth, t_chess_va
 			//-- Order the moves
 			order_evade_check(board, moves, ply);
 		}
-
 
 		//-- Play moves
 		while (make_next_best_move(board, moves, undo)) {
@@ -423,7 +421,6 @@ t_chess_value qsearch_plus(struct t_board *board, int ply, int depth, t_chess_va
 			b = a + 1;
 
 		}
-
 	}
 	else {
 		//--------------------------------------------------------
@@ -551,7 +548,7 @@ t_chess_value qsearch(struct t_board *board, int ply, int depth, t_chess_value a
 	struct t_pv_data *pv = &(board->pv_data[ply]);
 
 	//-- Has the maximum depth been reached
-    if (ply > MAXPLY || uci.stop)
+    if (ply >= MAXPLY || uci.stop)
         return pv->eval->static_score;
 
     //-- Increment the node count
@@ -561,7 +558,8 @@ t_chess_value qsearch(struct t_board *board, int ply, int depth, t_chess_value a
     if (ply > deepest) {
         deepest = ply;
 		do_uci_depth();
-        //write_path(board, ply - 1, "path.txt");
+		//if (ply == MAXPLY)
+		//	write_path(board, ply - 1, "path.txt");
     }
 
 	//-- Mate Distance Pruning
@@ -595,7 +593,7 @@ t_chess_value qsearch(struct t_board *board, int ply, int depth, t_chess_value a
     //-----------------------------------------------
     if (board->in_check) {
 
-        best_score = -CHESS_INFINITY;
+        best_score = -CHECKMATE;
 
         //-- Generate moves which get out of check
         generate_evade_check(board, moves);
@@ -727,7 +725,7 @@ t_chess_value alphabeta_tip(struct t_board *board, int ply, int depth, t_chess_v
 	*fail_low = FALSE;
 
 	//-- Has the maximum depth been reached
-	if (ply > MAXPLY) {
+	if (ply >= MAXPLY) {
 		return 0;
 	}
 
@@ -743,10 +741,8 @@ t_chess_value alphabeta_tip(struct t_board *board, int ply, int depth, t_chess_v
 	//-- Has there been a match?
 	if (hash_record != NULL){
 
-
 		//-- Get the score from the hash table
 		t_chess_value hash_score = get_hash_score(hash_record, ply);
-
 
 		//-- Score is worse than alpha
 		if (hash_record->bound != HASH_LOWER && hash_score <= alpha){

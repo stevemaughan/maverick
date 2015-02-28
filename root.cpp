@@ -23,6 +23,12 @@ void root_search(struct t_board *board)
 	struct t_pv_data *pv = board->pv_data;
 	t_chess_value e;
 
+	//-- What type of chess are we playing?
+	if (board->chess960)
+		send_info("Playing Chess960 / FRC");
+
+	assert(uci.options.chess960 == board->chess960);
+
 	//-- Generate moves
 	struct t_move_list move_list[1];
 	generate_legal_moves(board, move_list);
@@ -183,12 +189,13 @@ void root_search(struct t_board *board)
 		}
 
 		//-- Sort moves based on Node count
-		qsort_moves(move_list, 1, move_list->count - 1);
+		if (move_list->count > 1)
+			qsort_moves(move_list, 1, move_list->count - 1);
 
 	} while (!is_search_complete(board, best_score, search_ply, move_list) && !uci.stop);
 
 	//-- Snooze while still in ponder mode
-	while (uci.level.ponder && !uci.stop)
+	while (((uci.level.infinite) || (uci.level.ponder)) && !uci.stop)
 		Sleep(1);
 
 	//-- Send the latest PV
@@ -393,6 +400,8 @@ void root_search_aspiration(struct t_board *board)
     //-- Send the latest PV
 	if (!uci.stop)
 		do_uci_new_pv(board, best_score, search_ply);
+	else
+		send_info("Search has been stopped!");
 
     //-- Send the GUI all of the search details
     do_uci_hash_full();

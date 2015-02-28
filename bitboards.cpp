@@ -85,39 +85,7 @@ void init_bitboards()
         }
     }
 
-    //-- Initialize Castle Possible
-    castle[0].possible = SQUARE64(F1) | SQUARE64(G1);
-    castle[1].possible = SQUARE64(D1) | SQUARE64(C1) | SQUARE64(B1);
-    castle[2].possible = SQUARE64(F8) | SQUARE64(G8);
-    castle[3].possible = SQUARE64(D8) | SQUARE64(C8) | SQUARE64(B8);
 
-    //-- Initialize Castle Attacks
-    castle[0].not_attacked = (SQUARE64(F1) | SQUARE64(G1));
-    castle[1].not_attacked = (SQUARE64(D1) | SQUARE64(C1));
-    castle[2].not_attacked = (SQUARE64(F8) | SQUARE64(G8));
-    castle[3].not_attacked = (SQUARE64(D8) | SQUARE64(C8));
-
-    //-- Initialize Rook Square
-    castle[0].rook_from = H1;
-    castle[1].rook_from = A1;
-    castle[2].rook_from = H8;
-    castle[3].rook_from = A8;
-
-    castle[0].rook_to	= F1;
-    castle[1].rook_to = D1;
-    castle[2].rook_to = F8;
-    castle[3].rook_to = D8;
-
-    //-- Initialize King Square
-    castle[0].king_from = E1;
-    castle[1].king_from = E1;
-    castle[2].king_from = E8;
-    castle[3].king_from = E8;
-
-    for (i = 0; i < 4; i++) {
-        castle[i].rook_from_to = (SQUARE64(castle[i].rook_from) | SQUARE64(castle[i].rook_to));
-        castle[i].rook_piece = PIECEINDEX((i >> 1), ROOK);
-    }
     // Initialize BETWEEN array
     for (s = A1; s <= H8; s++) {
         for (target = A1; target <= H8; target++) {

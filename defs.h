@@ -9,23 +9,25 @@
 // Define Version
 //===========================================================//
 #define ENGINE_NAME							"Maverick"
-#define VERSION_NUMBER					"0.51"
-#ifdef _DEBUG
+#define VERSION_NUMBER						"0.60"
 
-#define ENGINE_VERSION					"Debug"
-#else
-#ifdef MINGW64
-#ifdef POPCOUNT
-	#define ENGINE_VERSION				VERSION_NUMBER " x64"
-#else
-	#define ENGINE_VERSION				VERSION_NUMBER " x64 (No Popcount)"
+#if WIN32_CODE
+	#define ENGINE_VERSION					VERSION_NUMBER " x32"
 #endif
+
+#if NOPOPCOUNT
+	#define ENGINE_VERSION						VERSION_NUMBER "x64 (No Popcount)"
+#else 
+#if _DEBUG
+	#define ENGINE_VERSION						VERSION_NUMBER " x64 Debug"
 #else
-#define ENGINE_VERSION					VERSION_NUMBER " x32"
+	#define ENGINE_VERSION					VERSION_NUMBER " x64"
 #endif
 #endif
+
 #define ENGINE_AUTHOR						"Steve Maughan"
 #include <cassert>
+
 //===========================================================//
 // Primitive Logic
 //===========================================================///
@@ -211,6 +213,7 @@ struct t_castle_record
     t_chess_square							rook_to;			// position of the rook after castling
     t_bitboard								rook_from_to;		// from and to bitboard of rook
     t_chess_piece							rook_piece;			// white or black rook
+	uchar									mask;
 };
 
 //===========================================================//
@@ -320,6 +323,7 @@ struct t_board
     t_chess_square							square[64];
     uchar									fifty_move_count;
     struct t_pv_data						pv_data[MAXPLY + 2];
+	BOOL									castling_squares_changed;
 };
 
 //===========================================================//
@@ -351,6 +355,7 @@ struct t_uci_options
     BOOL									show_search_statistics;
 	BOOL									eval_test;
 	BOOL									smart_book;
+	BOOL									chess960;
 };
 
 struct t_uci_thinking

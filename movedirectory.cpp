@@ -28,7 +28,21 @@ t_move_record *lookup_move(struct t_board *board, char *move_string) {
     t_chess_color color = COLOR(piece);
     t_chess_piece promote_to = 0;
 
-    if (PAWN == PIECETYPE(piece) && ((color == WHITE && RANK(to_square) == 7) || (color == BLACK && RANK(to_square) == 0))) {
+	if (KING == PIECETYPE(piece)){
+
+		// Is it a Chess960 castling move?
+		if ((captured != BLANK) && (COLOR(board->square[to_square]) == color)){
+			if (to_square > from_square){
+				return &xmove_list[2 * color];
+			}
+			else{
+				return &xmove_list[2 * color + 1];
+			}
+		}
+		else
+			return move_directory[from_square][to_square][piece] + captured;
+	}
+    else if (PAWN == PIECETYPE(piece) && (RANK(to_square) % 7 == 0)) {
         if (move_string[4] == 'q')
             promote_to = QUEEN;
         else if (move_string[4] == 'b')
@@ -45,62 +59,147 @@ t_move_record *lookup_move(struct t_board *board, char *move_string) {
         return move_directory[from_square][to_square][piece] + captured;
 }
 
-void configure_castling(int *i)
+BOOL castle_integrity(struct t_board *board)
 {
-    struct t_move_record *move = &xmove_list[*i];
+
+	BOOL ok = TRUE;
+
+	//-- Loop round for each possible type of castle
+	for (int i = 0; i < 4; i++)
+	{
+
+		struct t_move_record *move = &xmove_list[i];
+
+		//-- Is this type of castling relevant in this position?
+		if (castle[i].mask & board->castling)
+		{
+			//-- Is the king in its square?
+			if (PIECETYPE(board->square[castle[i].king_from]) != KING)
+				ok = FALSE;
+
+			//-- Is the rook on its square?
+			if (PIECETYPE(board->square[castle[i].rook_from]) != ROOK)
+				ok = FALSE;
+
+			if (move->from_square != castle[i].king_from)
+				ok = FALSE;
+
+		}		
+	}
+
+	if (!ok)
+		send_info("Castling Messed Up!!");
+
+	return ok;
+
+}
+
+void configure_castling()
+{
+    struct t_move_record *move = &xmove_list[0];
 
     // White Kingside
     move->captured = BLANK;
     move->from_square = E1;
     move->to_square = G1;
+	move->from_to_bitboard = SQUARE64(move->from_square) | SQUARE64(move->to_square);
     move->move_type = MOVE_CASTLE;
     move->piece = WHITEKING;
     move->promote_to = BLANK;
     move->castling_delta = (BLACK_CASTLE_OO | BLACK_CASTLE_OOO);
     move_directory[move->from_square][move->to_square][move->piece] = move;
     move_directory[move->from_square][H1][move->piece] = move;
-    (*i)++;
     move++;
 
     // White Queenside
     move->captured = BLANK;
     move->from_square = E1;
     move->to_square = C1;
-    move->move_type = MOVE_CASTLE;
+	move->from_to_bitboard = SQUARE64(move->from_square) | SQUARE64(move->to_square);
+	move->move_type = MOVE_CASTLE;
     move->piece = WHITEKING;
     move->promote_to = BLANK;
     move->castling_delta = (BLACK_CASTLE_OO | BLACK_CASTLE_OOO);
     move_directory[move->from_square][move->to_square][move->piece] = move;
     move_directory[move->from_square][A1][move->piece] = move;
-    (*i)++;
     move++;
 
     // Black Kingside
     move->captured = BLANK;
     move->from_square = E8;
     move->to_square = G8;
-    move->move_type = MOVE_CASTLE;
+	move->from_to_bitboard = SQUARE64(move->from_square) | SQUARE64(move->to_square);
+	move->move_type = MOVE_CASTLE;
     move->piece = BLACKKING;
     move->promote_to = BLANK;
     move->castling_delta = (WHITE_CASTLE_OO | WHITE_CASTLE_OOO);
     move_directory[move->from_square][move->to_square][move->piece] = move;
     move_directory[move->from_square][H8][move->piece] = move;
-    (*i)++;
     move++;
 
     // Black Queenside
     move->captured = BLANK;
     move->from_square = E8;
     move->to_square = C8;
-    move->move_type = MOVE_CASTLE;
+	move->from_to_bitboard = SQUARE64(move->from_square) | SQUARE64(move->to_square);
+	move->move_type = MOVE_CASTLE;
     move->piece = BLACKKING;
     move->promote_to = BLANK;
     move->castling_delta = (WHITE_CASTLE_OO | WHITE_CASTLE_OOO);
     move_directory[move->from_square][move->to_square][move->piece] = move;
     move_directory[move->from_square][A8][move->piece] = move;
-    (*i)++;
     move++;
 
+	//-- Initialize Castle Possible
+	castle[0].possible = SQUARE64(F1) | SQUARE64(G1);
+	castle[1].possible = SQUARE64(D1) | SQUARE64(C1) | SQUARE64(B1);
+	castle[2].possible = SQUARE64(F8) | SQUARE64(G8);
+	castle[3].possible = SQUARE64(D8) | SQUARE64(C8) | SQUARE64(B8);
+
+	//-- Initialize Castle Attacks
+	castle[0].not_attacked = (SQUARE64(F1) | SQUARE64(G1));
+	castle[1].not_attacked = (SQUARE64(D1) | SQUARE64(C1));
+	castle[2].not_attacked = (SQUARE64(F8) | SQUARE64(G8));
+	castle[3].not_attacked = (SQUARE64(D8) | SQUARE64(C8));
+
+	//-- Initialize Rook Square
+	castle[0].rook_from = H1;
+	castle[1].rook_from = A1;
+	castle[2].rook_from = H8;
+	castle[3].rook_from = A8;
+
+	castle[0].rook_to = F1;
+	castle[1].rook_to = D1;
+	castle[2].rook_to = F8;
+	castle[3].rook_to = D8;
+
+	//-- Initialize King Square
+	castle[0].king_from = E1;
+	castle[1].king_from = E1;
+	castle[2].king_from = E8;
+	castle[3].king_from = E8;
+
+	// Initialize Castle Mask
+	castle[0].mask = WHITE_CASTLE_OO;
+	castle[1].mask = WHITE_CASTLE_OOO;
+	castle[2].mask = BLACK_CASTLE_OO;
+	castle[3].mask = BLACK_CASTLE_OOO;
+
+	for (int i = 0; i < 4; i++) {
+		castle[i].rook_from_to = (SQUARE64(castle[i].rook_from) | SQUARE64(castle[i].rook_to));
+		castle[i].rook_piece = PIECEINDEX((i >> 1), ROOK);
+	}
+
+	// Define the changes to the hash
+	for (int i = 0; i < 4; i++)
+	{
+		move = &xmove_list[i];
+		move->hash_delta = white_to_move_hash;
+		move->hash_delta ^= hash_value[move->piece][move->from_square] ^ hash_value[move->piece][move->to_square];
+		move->hash_delta ^= hash_value[castle[i].rook_piece][castle[i].rook_from] ^ hash_value[castle[i].rook_piece][castle[i].rook_to];
+		move->pawn_hash_delta = white_to_move_hash;
+		move->pawn_hash_delta ^= hash_value[move->piece][move->from_square] ^ hash_value[move->piece][move->to_square];
+	}
 }
 
 void configure_pawn_push(int *i)
@@ -512,6 +611,121 @@ void configure_piece_moves(int *i)
     }
 }
 
+void init_960_castling(struct t_board *board, t_chess_square king_square, t_chess_square rook_square)
+{
+	// Color which is castling
+	t_chess_color color = RANK(king_square) / 7;
+
+	// Local varibles
+	int castle_index;
+	t_chess_square king_to;
+	t_chess_square smin;
+	t_chess_square smax;
+	t_chess_square kmin;
+	t_chess_square kmax;
+	struct t_move_record *move;
+
+	// Is it Kingside castling
+	if (king_square < rook_square){
+		castle_index = (color * 2);
+		board->castling |= castle[castle_index].mask;
+
+		if (castle[castle_index].king_from == king_square && castle[castle_index].rook_from == rook_square)
+			return;
+
+		board->castling_squares_changed = TRUE;
+		
+		king_to = G1 + (56 * color);
+		castle[castle_index].rook_to = king_to - 1;
+
+		castle[castle_index].possible = 0;
+		castle[castle_index].not_attacked = 0;
+
+		smax = max(rook_square, king_to);
+		smin = min(king_to - 1, king_square);
+
+		kmin = min(king_square, king_to);
+		kmax = max(king_square, king_to);
+
+		for (t_chess_square s = smin; s <= smax; s++)
+		{
+			castle[castle_index].possible |= SQUARE64(s);
+			if (s >= kmin && s <= kmax)
+				castle[castle_index].not_attacked |= SQUARE64(s);
+		}
+	}
+
+	// Queenside castling
+	else{
+		castle_index = (color * 2) + 1;
+		board->castling |= castle[castle_index].mask;
+
+		if (castle[castle_index].king_from == king_square && castle[castle_index].rook_from == rook_square)
+			return;
+
+		board->castling_squares_changed = TRUE;
+
+		king_to = C1 + (56 * color);
+		castle[castle_index].rook_to = king_to + 1;
+
+		castle[castle_index].possible = 0;
+		castle[castle_index].not_attacked = 0;
+
+		smin = min(rook_square, king_to);
+		smax = max(king_to + 1, king_square);
+
+		kmin = min(king_square, king_to);
+		kmax = max(king_square, king_to);
+
+		for (t_chess_square s = smin; s <= smax; s++)
+		{
+			castle[castle_index].possible |= SQUARE64(s);
+			if (s >= kmin && s <= kmax)
+				castle[castle_index].not_attacked |= SQUARE64(s);
+		}
+	}
+
+	castle[castle_index].possible &= ~SQUARE64(rook_square);
+	castle[castle_index].possible &= ~SQUARE64(king_square);
+	castle[castle_index].not_attacked &= ~SQUARE64(king_square);
+
+	castle[castle_index].king_from = king_square;
+	castle[castle_index].rook_from = rook_square;
+	castle[castle_index].rook_from_to = (SQUARE64(rook_square) ^ SQUARE64(castle[castle_index].rook_to));
+	castle[castle_index].rook_piece = PIECEINDEX(color, ROOK);
+
+	move = &xmove_list[castle_index];
+	move->from_square = king_square;
+	move->to_square = king_to;
+	move->from_to_bitboard = (SQUARE64(king_square) ^ SQUARE64(king_to));
+
+	move->hash_delta = white_to_move_hash;
+	move->hash_delta ^= hash_value[move->piece][move->from_square] ^ hash_value[move->piece][move->to_square];
+	move->hash_delta ^= hash_value[castle[castle_index].rook_piece][castle[castle_index].rook_from] ^ hash_value[castle[castle_index].rook_piece][castle[castle_index].rook_to];
+	move->pawn_hash_delta = white_to_move_hash;
+	move->pawn_hash_delta ^= hash_value[move->piece][move->from_square] ^ hash_value[move->piece][move->to_square];
+
+}
+
+void init_directory_castling_delta()
+{
+	int i;
+	struct t_move_record *move;
+	uchar not_mask;
+
+	for (i = 0, move = &xmove_list[0]; i < GLOBAL_MOVE_COUNT; i++, move++) {
+		// castling mask
+		move->castling_delta = (WHITE_CASTLE_OO | WHITE_CASTLE_OOO | BLACK_CASTLE_OO | BLACK_CASTLE_OOO);
+		for (int j = 0; j < 4; j++) {
+			not_mask = (15 ^ ((uchar)1 << j));
+			if ((move->from_square == castle[j].king_from) | (move->to_square == castle[j].king_from))
+				move->castling_delta &= not_mask;
+			if ((move->from_square == castle[j].rook_from) | (move->to_square == castle[j].rook_from))
+				move->castling_delta &= not_mask;
+		}
+	}
+}
+
 void init_move_directory()
 {
     int i, j;
@@ -531,26 +745,19 @@ void init_move_directory()
         }
     }
 
-    i = 0;
-    configure_castling(&i);
+	configure_castling();
+	i = 4;
     configure_pawn_push(&i);
     configure_pawn_capture(&i);
     configure_piece_moves(&i);
+
+	init_directory_castling_delta();
 
     //-- Fill in the data
     for (i = 0, move = &xmove_list[0]; i < GLOBAL_MOVE_COUNT; i++, move++) {
         move->history = 0;
         move->index = i;
         move->from_to_bitboard = SQUARE64(move->from_square) | SQUARE64(move->to_square);
-        // castling mask
-        move->castling_delta = (WHITE_CASTLE_OO | WHITE_CASTLE_OOO | BLACK_CASTLE_OO | BLACK_CASTLE_OOO);
-        for (j = 0; j < 4; j++) {
-            not_mask = (15 ^ ((uchar)1 << j));
-            if ((move->from_square == castle[j].king_from) | (move->to_square == castle[j].king_from))
-                move->castling_delta &= not_mask;
-            if ((move->from_square == castle[j].rook_from) | (move->to_square == castle[j].rook_from))
-                move->castling_delta &= not_mask;
-        }
         move->capture_mask = 0;
         if (move->captured && (move->move_type != MOVE_PxP_EP))
             move->capture_mask = SQUARE64(move->to_square);

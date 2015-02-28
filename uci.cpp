@@ -14,11 +14,14 @@
 #include <math.h>
 #include <time.h>
 #include <assert.h>
+#include <mmsystem.h>
 
 #include "defs.h"
 #include "data.h"
 #include "procs.h"
 #include "bittwiddle.h"
+
+#pragma comment(lib, "winmm.lib")
 
 HANDLE thread_handle;
 unsigned threadID;
@@ -130,9 +133,11 @@ void listen_for_uci_input()
         /*===============================================================*/
         if (!strcmp(input_string, "test") || !strcmp(input_string, "TEST"))
             test_procedure();
-        if (!strcmp(input_string, "testperft") || !strcmp(input_string, "TESTPERFT"))
-            test_perft();
-        if (!strcmp(input_string, "testbook") || !strcmp(input_string, "TESTBOOK"))
+		if (!strcmp(input_string, "testperft") || !strcmp(input_string, "TESTPERFT"))
+			test_perft();
+		if (!strcmp(input_string, "testperft960") || !strcmp(input_string, "TESTPERFT960"))
+			test_perft960();
+		if (!strcmp(input_string, "testbook") || !strcmp(input_string, "TESTBOOK"))
             test_book();
 
     }
@@ -193,9 +198,13 @@ void uci_set_mode()
         uci.opening_book.f = NULL;
     }
 
-    strcpy(s,"option name UCI_ShowCurrLine type check default false");
-     send_command(s);
-    uci.options.current_line = FALSE;
+	strcpy(s, "option name UCI_ShowCurrLine type check default false");
+	send_command(s);
+	uci.options.current_line = FALSE;
+
+	strcpy(s, "option name UCI_Chess960 type check default false");
+	send_command(s);
+	uci.options.chess960 = FALSE;
 
     strcpy(s,"option name EvalTest type check default false");
     uci.options.eval_test = FALSE;
@@ -242,6 +251,7 @@ void uci_go(char *s)
 {
 	while (uci.engine_state != UCI_ENGINE_WAITING)
 		Sleep(1);
+
     search_start_time = time_now();
     last_display_update = search_start_time;
     set_uci_level(s, position->to_move);
@@ -346,13 +356,21 @@ void uci_setoption(char *s)
 		return;
     }
 
-	if ((index_of("UCI_ShowCurrLine", s) == 2) || (index_of("UCI_SHOWCURRLINE", s) == 2) || (index_of("uci_showcurrline", s) == 2)){
+	if ((index_of("UCI_Chess960", s) == 2) || (index_of("UCI_CHESS960", s) == 2) || (index_of("uci_chess960", s) == 2) || (index_of("UCI_chess960", s) == 2)){
         if (!strcmp(word_index(4,s),"true") || !strcmp(word_index(4,s),"TRUE"))
-        	uci.options.current_line = TRUE;
+        	uci.options.chess960 = TRUE;
         else
-        	uci.options.current_line = FALSE;
+        	uci.options.chess960 = FALSE;
 		return;
     }
+
+	if ((index_of("UCI_ShowCurrLine", s) == 2) || (index_of("UCI_SHOWCURRLINE", s) == 2) || (index_of("uci_showcurrline", s) == 2)){
+		if (!strcmp(word_index(4, s), "true") || !strcmp(word_index(4, s), "TRUE"))
+			uci.options.current_line = TRUE;
+		else
+			uci.options.current_line = FALSE;
+		return;
+	}
 
 	if ((index_of("EvalTest", s) == 2) || (index_of("EVALTEST", s) == 2) || (index_of("evaltest", s) == 2)){
 		if (!strcmp(word_index(4, s), "true") || !strcmp(word_index(4, s), "TRUE"))
@@ -851,9 +869,12 @@ void uci_new_game(struct t_board *board)
 		uci_stop();
 
     clear_hash();
-    //clear_pv(board);
     clear_history();
-	//write_log("", "maverick-log.txt", FALSE, FALSE);
+	configure_castling();
+	init_directory_castling_delta();
+
+	uci.options.chess960 = FALSE;
+	board->chess960 = FALSE;
 }
 
 void uci_set_debug(char *s)
@@ -912,8 +933,13 @@ void init_engine(struct t_board *board)
 		srand(time(NULL));
 
 		message_update_mask = 32767;
-
+		
+#if _DEBUG
+		uci.debug = TRUE;
+#else
 		uci.debug = FALSE;
+#endif
+			
         //initialize stuff
         init_eval_function();
         init_board(board);

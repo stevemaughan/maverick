@@ -84,7 +84,7 @@ t_nodes do_perft(struct t_board *board, int depth)
     }
 
     for (i = move_list->count - 1; i >= 0; i--) {
-        assert(lookup_move(board, move_as_str(move_list->move[i])) == move_list->move[i]);
+		assert(lookup_move(board, move_as_str(move_list->move[i])) == move_list->move[i]);
         if (make_next_move(board, move_list, bad_move_list, undo)) {
             assert(integrity(board));
 

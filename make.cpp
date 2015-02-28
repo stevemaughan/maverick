@@ -27,11 +27,11 @@ inline BOOL is_in_check_after_move(struct t_board *board, struct t_move_record *
         // castling
         if (move->move_type == MOVE_CASTLE) {
             b = castle[move->index].not_attacked;
-            do {
+            while (b) {
                 s = bitscan_reset(&b);
                 if (is_square_attacked(board, s, opponent))
                     return TRUE;
-            } while (b);
+            };
         }
         // Other King moves
         else
@@ -135,10 +135,18 @@ BOOL make_move(struct t_board *board, t_bitboard pinned, struct t_move_record *m
 	assert(integrity(board));
 
     if (!board->in_check) {
-        switch (move->move_type) {
-        case MOVE_CASTLE:
-            if (is_in_check_after_move(board, move))
-                return FALSE;
+		switch (move->move_type) {
+		case MOVE_CASTLE:
+			if (board->chess960){
+				castle_move = &castle[move->index];
+				if ((castle_move->rook_from_to & pinned) || is_in_check_after_move(board, move))
+					return FALSE;
+			}
+			else
+			{
+				if (is_in_check_after_move(board, move))
+					return FALSE;
+			}
             break;
         case MOVE_PxP_EP:
             if (is_in_check_after_move(board, move))
@@ -189,7 +197,7 @@ BOOL make_move(struct t_board *board, t_bitboard pinned, struct t_move_record *m
     // Update Hash
     board->hash ^= move->hash_delta;
     board->hash ^= castle_hash[board->castling ^ undo->castling];
-    board->pawn_hash ^= move->pawn_hash_delta;
+	board->pawn_hash ^= move->pawn_hash_delta;
     if (board->ep_square)
         board->hash ^= ep_hash[COLUMN(bitscan(board->ep_square))];
 
@@ -200,13 +208,13 @@ BOOL make_move(struct t_board *board, t_bitboard pinned, struct t_move_record *m
         // Update bitboards
         board->piecelist[piece] ^= (move->from_to_bitboard);
         board->pieces[color][ROOK] ^= castle_move->rook_from_to;
-        board->occupied[color] ^= (move->from_to_bitboard | castle_move->rook_from_to);
-        board->all_pieces ^= (move->from_to_bitboard | castle_move->rook_from_to);
+        board->occupied[color] ^= (move->from_to_bitboard ^ castle_move->rook_from_to);
+        board->all_pieces ^= (move->from_to_bitboard ^ castle_move->rook_from_to);
         // Move on board
-        board->square[to] = piece;
-        board->square[castle_move->rook_from] = BLANK;
+		board->square[castle_move->rook_from] = BLANK;        
         board->square[castle_move->rook_to] = castle_move->rook_piece;
-        // Update flags
+		board->square[to] = piece;
+		// Update flags
         board->fifty_move_count++;
         // Update Check flag
         update_in_check(board, from, castle_move->rook_to, opponent);
@@ -214,9 +222,9 @@ BOOL make_move(struct t_board *board, t_bitboard pinned, struct t_move_record *m
         board->ep_square = 0;
         // King square
         board->king_square[color] = to;
-        // Update draw stack with new hash value
+		// Update draw stack with new hash value
         draw_stack[++draw_stack_count] = board->hash;
-        assert(integrity(board));
+		assert(integrity(board));
         return TRUE;
     case MOVE_PAWN_PUSH1:
         // Update bitboards
@@ -231,9 +239,9 @@ BOOL make_move(struct t_board *board, t_bitboard pinned, struct t_move_record *m
         update_in_check(board, from, to, opponent);
         // Update ep flag
         board->ep_square = 0;
-        // Update draw stack with new hash value
+		// Update draw stack with new hash value
         draw_stack[++draw_stack_count] = board->hash;
-        assert(integrity(board));
+		assert(integrity(board));
         return TRUE;
     case MOVE_PAWN_PUSH2:
         // Update bitboards
@@ -383,8 +391,8 @@ BOOL make_move(struct t_board *board, t_bitboard pinned, struct t_move_record *m
         board->ep_square = 0;
         // Update draw stack with new hash value
         draw_stack[++draw_stack_count] = board->hash;
-        assert(integrity(board));
-        return TRUE;
+		assert(integrity(board));
+		return TRUE;
     case MOVE_PIECExPIECE:
 		// Update Material Hash
 		board->material_hash ^= material_hash_values[captured][popcount(board->piecelist[captured])];        
@@ -423,7 +431,7 @@ BOOL make_move(struct t_board *board, t_bitboard pinned, struct t_move_record *m
         update_in_check(board, from, to, opponent);
         // Update ep flag
         board->ep_square = 0;
-        // Update draw stack with new hash value
+		// Update draw stack with new hash value
         draw_stack[++draw_stack_count] = board->hash;
         return TRUE;
     case MOVE_KING_MOVE:
@@ -441,9 +449,9 @@ BOOL make_move(struct t_board *board, t_bitboard pinned, struct t_move_record *m
         board->ep_square = 0;
         // Update King Position
         board->king_square[color] = to;
-        // Update draw stack with new hash value
+		// Update draw stack with new hash value
         draw_stack[++draw_stack_count] = board->hash;
-        assert(integrity(board));
+		assert(integrity(board));
         return TRUE;
     case MOVE_KINGxPIECE:
 		// Update Material Hash
@@ -464,7 +472,7 @@ BOOL make_move(struct t_board *board, t_bitboard pinned, struct t_move_record *m
         board->ep_square = 0;
         // Update King Position
         board->king_square[color] = to;
-        // Update draw stack with new hash value
+		// Update draw stack with new hash value
         draw_stack[++draw_stack_count] = board->hash;
         assert(integrity(board));
         return TRUE;
@@ -487,7 +495,7 @@ BOOL make_move(struct t_board *board, t_bitboard pinned, struct t_move_record *m
         board->ep_square = 0;
         // Update King Position
         board->king_square[color] = to;
-        // Update draw stack with new hash value
+		// Update draw stack with new hash value
         draw_stack[++draw_stack_count] = board->hash;
         assert(integrity(board));
         return TRUE;
@@ -531,8 +539,10 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
     case MOVE_CASTLE:
         castle_move		= &castle[move->index];
         //-- Squares
-        board->square[to] = BLANK;
-        board->square[castle_move->rook_to] = BLANK;
+		if (to != from) // Test only necessary for Chess960
+			board->square[to] = BLANK;
+		if (castle_move->rook_to != from)
+			board->square[castle_move->rook_to] = BLANK;
         board->square[castle_move->rook_from] = castle_move->rook_piece;
         //-- Bitboards
         board->all_pieces ^= (move->from_to_bitboard ^ castle_move->rook_from_to);
@@ -541,7 +551,8 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
         board->piecelist[castle_move->rook_piece] ^= castle_move->rook_from_to;
         //-- King Position
         board->king_square[color] = from;
-        return;
+		assert(integrity(board));        
+		return;
     case MOVE_PAWN_PUSH1:
         //-- Squares
         board->square[to] = BLANK;
@@ -549,7 +560,8 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
         board->all_pieces ^= move->from_to_bitboard;
         board->occupied[color] ^= move->from_to_bitboard;
         board->piecelist[piece] ^= move->from_to_bitboard;
-        return;
+		assert(integrity(board));
+		return;
     case MOVE_PAWN_PUSH2:
         //-- Squares
         board->square[to] = BLANK;
@@ -582,7 +594,8 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
         board->piecelist[piece] ^= move->from_to_bitboard;
         board->piecelist[captured] ^= SQUARE64(to);
         board->occupied[opponent] ^= SQUARE64(to);
-        return;
+		assert(integrity(board));
+		return;
     case MOVE_PxP_EP:
         captured = move->captured;
         opponent = OPPONENT(color);
@@ -596,7 +609,8 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
         board->all_pieces ^= (move->from_to_bitboard ^ SQUARE64(ep_capture));
         board->piecelist[captured] ^= SQUARE64(ep_capture);
         board->occupied[opponent] ^= SQUARE64(ep_capture);
-        return;
+		assert(integrity(board));
+		return;
     case MOVE_PROMOTION:
         promote = move->promote_to;
         //-- Squares
@@ -606,7 +620,8 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
         board->occupied[color] ^= move->from_to_bitboard;
         board->piecelist[piece] ^= SQUARE64(from);
         board->piecelist[promote] ^= SQUARE64(to);
-        return;
+		assert(integrity(board));
+		return;
     case MOVE_CAPTUREPROMOTE:
         opponent = OPPONENT(color);
         promote = move->promote_to;
@@ -620,7 +635,8 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
         board->occupied[opponent] ^= SQUARE64(to);
         board->piecelist[promote] ^= SQUARE64(to);
         board->piecelist[captured] ^= SQUARE64(to);
-        return;
+		assert(integrity(board));
+		return;
     case MOVE_PIECE_MOVE:
         //-- Squares
         board->square[to] = BLANK;
@@ -628,7 +644,8 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
         board->all_pieces ^= move->from_to_bitboard;
         board->occupied[color] ^= move->from_to_bitboard;
         board->piecelist[piece] ^= move->from_to_bitboard;
-        return;
+		assert(integrity(board));
+		return;
     case MOVE_PIECExPIECE:
         captured = move->captured;
         opponent = OPPONENT(color);
@@ -640,7 +657,8 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
         board->piecelist[piece] ^= move->from_to_bitboard;
         board->piecelist[captured] ^= SQUARE64(to);
         board->occupied[opponent] ^= SQUARE64(to);
-        return;
+		assert(integrity(board));
+		return;
     case MOVE_PIECExPAWN:
         captured = move->captured;
         opponent = OPPONENT(color);
@@ -652,7 +670,8 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
         board->piecelist[piece] ^= move->from_to_bitboard;
         board->piecelist[captured] ^= SQUARE64(to);
         board->occupied[opponent] ^= SQUARE64(to);
-        return;
+		assert(integrity(board));
+		return;
     case MOVE_KING_MOVE:
         //-- Squares
         board->square[to] = BLANK;
@@ -677,7 +696,8 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
         board->occupied[opponent] ^= SQUARE64(to);
         //-- King location
         board->king_square[color] = from;
-        return;
+		assert(integrity(board));
+		return;
     case MOVE_KINGxPAWN:
         captured = move->captured;
         opponent = OPPONENT(color);
@@ -691,7 +711,8 @@ void unmake_move(struct t_board *board, struct t_undo *undo) {
         board->occupied[opponent] ^= SQUARE64(to);
         //-- King location
         board->king_square[color] = from;
-        return;
+		assert(integrity(board));
+		return;
     }
     assert(FALSE);
 }
@@ -704,9 +725,18 @@ int legal_move_count(struct t_board *board, struct t_move_list *move_list) {
 
         switch (move_list->move[i]->move_type) {
         case MOVE_CASTLE:
-            if (!is_in_check_after_move(board, move_list->move[i]))
-                n++;
-            break;
+			if (board->chess960){
+				struct t_castle_record *castle_move;
+				castle_move = &castle[move_list->move[i]->index];
+				if (!((castle_move->rook_from_to & move_list->pinned_pieces) || is_in_check_after_move(board, move_list->move[i])))
+					n++;
+			}
+			else
+			{
+				if (!is_in_check_after_move(board, move_list->move[i]))
+					n++;
+			}
+			break;
         case MOVE_PxP_EP:
             if (!is_in_check_after_move(board, move_list->move[i]))
                 n++;
@@ -745,7 +775,6 @@ void make_game_move(struct t_board *board, char *s)
     move = lookup_move(board, s);
     make_move(board, 0, move, undo);
 
-    assert(integrity(board));
 }
 
 

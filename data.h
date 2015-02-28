@@ -102,14 +102,20 @@ extern const t_chess_value bishop_knight_corner[2][64];
 extern const t_chess_color square_color[64];
 
 extern const t_chess_value passed_pawn_bonus[2][64];
+extern const t_chess_value rook_behind_passed[2][2];
 
 //-- Mobility
 extern const t_chess_value horizontal_rook_mobility[2][8];
 extern const t_chess_value vertical_rook_mobility[2][8];
+extern const t_chess_value trapped_rook[2][16];
 
+extern const t_chess_value queen_mobility[2][32];
 extern const t_chess_value bishop_mobility[2][16];
 
 extern const t_chess_value double_pawn_penalty[2][8];
+
+//-- King Safety
+
 
 // Magics
 extern t_bitboard rook_magic_moves[64][4096];

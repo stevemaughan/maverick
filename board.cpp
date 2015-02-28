@@ -377,6 +377,12 @@ char *move_as_str(struct t_move_record *move)
 
     from_square = move->from_square;
     to_square = move->to_square;
+
+	//-- Handle Chess960
+	if (move->move_type == MOVE_CASTLE && uci.options.chess960){
+		to_square = castle[move->index].rook_from;
+	}
+
     if (from_square == to_square) {
         s[0] = '0';
         s[1] = '0';
@@ -437,6 +443,36 @@ char *move_as_str(struct t_move_record *move)
     s[5] = 0;
 
     return s;
+}
+
+t_chess_square kingside_rook(struct t_board *board, t_chess_color color){
+
+	t_chess_square s = H1 + 56 * color;
+
+	while ((board->square[s] != PIECEINDEX(color, ROOK)) && (board->square[s] != PIECEINDEX(color, KING)) && (s != A1 + 56 * color))
+	{
+		s--;
+	}
+
+	if (board->square[s] == PIECEINDEX(color, ROOK))
+		return s;
+	else
+		return -1;
+}
+
+t_chess_square queenside_rook(struct t_board *board, t_chess_color color){
+
+	t_chess_square s = A1 + 56 * color;
+
+	while ((board->square[s] != PIECEINDEX(color, ROOK)) && (board->square[s] != PIECEINDEX(color, KING)) && (s != H1 + 56 * color))
+	{
+		s++;
+	}
+
+	if (board->square[s] == PIECEINDEX(color, ROOK))
+		return s;
+	else
+		return -1;
 }
 
 BOOL integrity(struct t_board *board) {
@@ -534,9 +570,6 @@ void flip_board(struct t_board *board) {
     else
         board->check_attacker = 0;
 
-    //-- Castling rights
-    board->castling = (((board->castling & 3) << 2) | (board->castling >> 2));
-
     //-- Bitboard piece swaps
     board->all_pieces = 0;
     for (color = WHITE; color <= BLACK; color++) {
@@ -561,6 +594,20 @@ void flip_board(struct t_board *board) {
         else
             board->square[i] = BLANK;
     }
+
+	//-- Castling rights
+	board->castling = (((board->castling & 3) << 2) | (board->castling >> 2));
+	if (board->chess960){
+		for (i = 0; i < 4; i++){
+			color = (i / 2);
+			if (board->castling & (uchar(1) << i)){
+				if (i & uchar(1))
+					init_960_castling(board, board->king_square[color], queenside_rook(board, color));
+				else
+					init_960_castling(board, board->king_square[color], kingside_rook(board, color));
+			}
+		}
+	}
 
     board->to_move = opponent;
 
