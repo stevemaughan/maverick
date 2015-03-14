@@ -1,7 +1,7 @@
 //===========================================================//
 //
 // Maverick Chess Engine
-// Copyright 2013-2014 Steve Maughan
+// Copyright 2013-2015 Steve Maughan
 //
 //===========================================================//
 
@@ -525,6 +525,16 @@ BOOL test_eval() {
 	ok &= (v == evaluate(position, eval));
 
 	set_fen(position, "5k2/p1pK3p/1p2Q1p1/5Pq1/4P3/8/P5P1/8 b - -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));
+
+	set_fen(position, "4rbk1/pp3ppp/2p5/q1n2P2/2PRn2P/2N2Q2/PP2B1P1/1K5R b - -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));
+
+	set_fen(position, "2kr1b1r/pppbqpp1/2n5/1B1pP2p/P2Pn3/5N2/1PN2PPP/R1BQ1RK1 b - -");
 	v = evaluate(position, eval);
 	flip_board(position);
 	ok &= (v == evaluate(position, eval));

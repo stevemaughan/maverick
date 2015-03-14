@@ -1,7 +1,7 @@
 //===========================================================//
 //
 // Maverick Chess Engine
-// Copyright 2013-2014 Steve Maughan
+// Copyright 2013-2015 Steve Maughan
 //
 //===========================================================//
 
@@ -168,6 +168,9 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
     pawn_record->middlegame = middlegame;
     pawn_record->endgame = endgame;
 
+	//-- Pawn Storm
+	eval_pawn_storm(board, pawn_record);
+
     //-- Transfer key Bitboard to the Board structure
     for (color = WHITE; color <= BLACK; color++) {
         eval->attacks[color][PAWN] = pawn_record->attacks[color];
@@ -248,3 +251,79 @@ t_hash calc_pawn_hash(struct t_board *board) {
 
     return zobrist;
 }
+
+//-- Evaluate pawn storm when castling on oppossite sides of the board
+void eval_pawn_storm(struct t_board *board, struct t_pawn_hash_record *pawn_record)
+{
+	t_bitboard w = 0, b = 0;
+
+	if (board->castling)
+	{
+		exit;
+	}
+	//-- White castled kingside and Black castled queenside
+	else if ((board->pieces[WHITE][KING] & BITBOARD_KINGSIDE) && (board->pieces[BLACK][KING] & BITBOARD_QUEENSIDE)){
+		w = (board->piecelist[WHITEPAWN] & BITBOARD_QUEENSIDE);
+		b = (board->piecelist[BLACKPAWN] & BITBOARD_KINGSIDE);
+	}
+	else if ((board->pieces[WHITE][KING] & BITBOARD_QUEENSIDE) && (board->pieces[BLACK][KING] & BITBOARD_KINGSIDE)){
+		w = (board->piecelist[WHITEPAWN] & BITBOARD_KINGSIDE);
+		b = (board->piecelist[BLACKPAWN] & BITBOARD_QUEENSIDE);
+	}
+	else
+		exit;
+
+	int s;
+	t_chess_value middlegame = 0;
+
+	//-- White bonus for advancing pawns 
+	if (w){
+		while (w){
+			s = bitscan_reset(&w);
+			middlegame += pawn_storm[RANK(s)];
+		}
+	}
+
+	//-- Black bonus for advancing pawns
+	if (b)
+	{
+		while (b)
+		{
+			s = bitscan_reset(&b);
+			middlegame -= pawn_storm[7 - RANK(s)];
+		}
+	}
+
+	//-- Store the data in pawn record
+	pawn_record->middlegame += middlegame;
+
+}
+//
+////-- Evaluate Pawn Shelter
+//void eval_pawn_shelter(struct t_board *board, struct t_pawn_hash_record *pawn_record)
+//{
+//	
+//
+//	//- Do this for black and white
+//	for (t_chess_color color = WHITE; color <= BLACK; color++){
+//
+//		t_chess_value middlegame = 0;
+// 
+//		//-- Has the king castled kingside?
+//		if (board->pieces[color][KING] & king_castle_squares[color][KINGSIDE]){
+//			
+//			//-- Bonus if pawn shield is in tact
+//			if (board->pieces[color][PAWN] & intact_pawns[color][KINGSIDE] == intact_pawns[color][KINGSIDE]){
+//				middlegame += MG_INTACT_PAWN_SHIELD;
+//			}
+//			else if (1){
+//
+//			}
+//
+//
+//		}
+//	}
+//
+//
+//
+//}

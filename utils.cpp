@@ -1,7 +1,7 @@
 //===========================================================//
 //
 // Maverick Chess Engine
-// Copyright 2013-2014 Steve Maughan
+// Copyright 2013-2015 Steve Maughan
 //
 //===========================================================//
 
@@ -16,7 +16,11 @@
 
 unsigned long time_now()
 {
+#if WIN32_CODE
     return GetTickCount();
+#else
+	return GetTickCount64();
+#endif
 }
 
 int index_of(char *substr, char *s)

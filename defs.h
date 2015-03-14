@@ -1,7 +1,7 @@
 //===========================================================//
 //
 // Maverick Chess Engine
-// Copyright 2013-2014 Steve Maughan
+// Copyright 2013-2015 Steve Maughan
 //
 //===========================================================//
 
@@ -68,6 +68,9 @@ typedef int BOOL;
 #define BLACKQUEEN							12
 #define BLACKPAWN							13
 #define BLACKKING							14
+
+#define KINGSIDE							0
+#define QUEENSIDE							1
 
 #define WHITE_CASTLE_OO						1
 #define WHITE_CASTLE_OOO					2
@@ -500,6 +503,9 @@ struct t_multi_pv {
 
 #define B8H1									0xfefefefefefefefe
 #define A8G1									0x7f7f7f7f7f7f7f7f
+
+#define BITBOARD_KINGSIDE						0xE0E0E0E0E0E0E0E0
+#define BITBOARD_QUEENSIDE						0x0707070707070707
 
 #define BITBOARDS_CENTER						0x00003C3C3C3C0000
 #define BITBOARDS_RING							0x007E424242427E00

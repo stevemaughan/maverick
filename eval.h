@@ -1,7 +1,7 @@
 //===========================================================//
 //
 // Maverick Chess Engine
-// Copyright 2013-2014 Steve Maughan
+// Copyright 2013-2015 Steve Maughan
 //
 //===========================================================//
 
@@ -33,13 +33,9 @@
 #define MG_BISHOP_PAIR					25
 #define EG_BISHOP_PAIR					65
 
-//-- Rook Mobility
+//-- Mobility
 #define ROOK_MOBILITY_MIDDLEGAME		5
 #define ROOK_MOBILITY_ENDGAME			10
-
-//-- Queen Mobility
-#define MG_QUEEN_MOBILITY				1
-#define EG_QUEEN_MOBILITY				5
 
 //-- Connected Knights
 #define MG_CONNECTED_KNIGHTS			10
@@ -55,3 +51,6 @@
 //-- Rooks on open file
 #define MG_ROOK_ON_OPEN_FILE			2
 #define MG_ROOK_ON_SEMI_OPEN_FILE		1
+
+//-- Pawn Shield 
+#define MG_INTACT_PAWN_SHIELD			15

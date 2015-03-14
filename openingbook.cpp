@@ -1,7 +1,7 @@
 //===========================================================//
 //
 // Maverick Chess Engine
-// Copyright 2013-2014 Steve Maughan
+// Copyright 2013-2015 Steve Maughan
 //
 //===========================================================//
 
@@ -12,6 +12,7 @@
 #include <Windows.h>
 #include <iostream>
 
+#include "Shlwapi.h"
 #include "defs.h"
 #include "data.h"
 #include "procs.h"
@@ -29,11 +30,24 @@ void set_own_book(BOOL value)
 
 void set_opening_book(char *book)
 {
-    strncpy(uci.opening_book.filename, book, sizeof uci.opening_book.filename);
+	TCHAR file_path[2048] = { 0 };
+	TCHAR file_to_open[2048] = { 0 };
+
+	GetModuleFileName(0, file_path, 2048);
+	PathRemoveFileSpec(file_path);
+	PathAddBackslash(file_path);
+	strcpy(file_to_open, file_path);
+
+	strncpy(uci.opening_book.filename, book, sizeof uci.opening_book.filename);
+	strtok(uci.opening_book.filename, "\n");
+
     if (uci.opening_book.f != NULL) {
         fclose(uci.opening_book.f);
     }
-    uci.opening_book.f = fopen(uci.opening_book.filename, "rb");
+
+	strcat(file_to_open, uci.opening_book.filename);
+
+    uci.opening_book.f = fopen(file_to_open, "rb");
     fseek(uci.opening_book.f, -16, SEEK_END);
     uci.opening_book.book_size = ftell(uci.opening_book.f) / 16;
 
@@ -43,7 +57,17 @@ int book_count()
 {
     int count = 0;
 
-    CHAR szSearch[MAX_PATH] = "*.bin";
+	TCHAR file_path[2048] = { 0 };
+
+	GetModuleFileName(0, file_path, 2048);
+	PathRemoveFileSpec(file_path);
+	PathAddBackslash(file_path);
+
+	CHAR szSearch[2048] = { 0 };
+	
+	strcpy(szSearch, file_path);
+	strcat(szSearch, "*.bin");
+
     HANDLE hFind = NULL;
     WIN32_FIND_DATAA FindFileData;
 
@@ -66,7 +90,17 @@ char *book_string()
 
     LARGE_INTEGER biggest;
 
-    CHAR szSearch[MAX_PATH] = "*.bin";
+	TCHAR file_path[2048] = { 0 };
+
+	GetModuleFileName(0, file_path, 2048);
+	PathRemoveFileSpec(file_path);
+	PathAddBackslash(file_path);
+
+	CHAR szSearch[2048] = { 0 };
+
+	strcpy(szSearch, file_path);
+	strcat(szSearch, "*.bin");
+	
     HANDLE hFind = NULL;
     WIN32_FIND_DATAA FindFileData;
     LARGE_INTEGER size;
@@ -92,7 +126,9 @@ char *book_string()
 
     //-- Find any Maverick opening books (...and give them preference)
     biggest.QuadPart = 0;
-    strcpy(szSearch, "Maverick*.bin");
+
+	strcpy(szSearch, file_path);
+	strcpy(szSearch, "Maverick*.bin");
     hFind = FindFirstFileA(szSearch, &FindFileData);
     if (hFind != INVALID_HANDLE_VALUE) {
         do {

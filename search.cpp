@@ -1,7 +1,7 @@
 //===========================================================//
 //
 // Maverick Chess Engine
-// Copyright 2013-2014 Steve Maughan
+// Copyright 2013-2015 Steve Maughan
 //
 //===========================================================//
 
@@ -284,10 +284,7 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 
         // Reset the zero width window
         b = a + 1;
-
     }
-
-    // Update Hash Table
 
     //-- Is it a draw
     if (pv->legal_moves_played == 0) {
@@ -608,7 +605,7 @@ t_chess_value qsearch(struct t_board *board, int ply, int depth, t_chess_value a
         order_evade_check(board, moves, ply);
 
         //-- Play moves
-        while (make_next_best_move(board, moves, undo) && !uci.stop) {
+		while (make_next_best_move(board, moves, undo)) {
 
             //-- Increment the "legal_moves_played" counter
             pv->legal_moves_played++;

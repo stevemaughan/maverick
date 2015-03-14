@@ -1,7 +1,7 @@
 //===========================================================//
 //
 // Maverick Chess Engine
-// Copyright 2013-2014 Steve Maughan
+// Copyright 2013-2015 Steve Maughan
 //
 //===========================================================//
 
@@ -113,6 +113,8 @@ void init_pawn_hash();
 void destroy_pawn_hash();
 struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_chess_eval *eval);
 t_hash calc_pawn_hash(struct t_board *board);
+//void eval_pawn_shelter(struct t_board *board, struct t_pawn_hash_record *pawn_record);
+void eval_pawn_storm(struct t_board *board, struct t_pawn_hash_record *pawn_record);
 
 //-- Static Exchange Evaluation (see.cpp)
 t_chess_value see(struct t_board *board, struct t_move_record *move, t_chess_value threshold);

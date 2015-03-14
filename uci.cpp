@@ -1,7 +1,7 @@
 //===========================================================//
 //
 // Maverick Chess Engine
-// Copyright 2013-2014 Steve Maughan
+// Copyright 2013-2015 Steve Maughan
 //
 //===========================================================//
 
@@ -395,8 +395,6 @@ void uci_setoption(char *s)
 			uci.options.smart_book = FALSE;
 		return;
 	}
-
-
 }
 
 /*=======================================================*/

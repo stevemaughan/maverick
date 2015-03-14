@@ -1,7 +1,7 @@
 //===========================================================//
 //
 // Maverick Chess Engine
-// Copyright 2013-2014 Steve Maughan
+// Copyright 2013-2015 Steve Maughan
 //
 //===========================================================//
 
@@ -115,7 +115,10 @@ extern const t_chess_value bishop_mobility[2][16];
 extern const t_chess_value double_pawn_penalty[2][8];
 
 //-- King Safety
-
+extern t_bitboard king_castle_squares[2][2];
+extern t_bitboard intact_pawns[2][2];
+extern t_bitboard pawn_shield[2][2][8];
+extern const t_chess_value pawn_storm[8];
 
 // Magics
 extern t_bitboard rook_magic_moves[64][4096];

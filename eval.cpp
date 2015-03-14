@@ -1,7 +1,7 @@
 //===========================================================//
 //
 // Maverick Chess Engine
-// Copyright 2013-2014 Steve Maughan
+// Copyright 2013-2015 Steve Maughan
 //
 //===========================================================//
 
@@ -74,70 +74,19 @@ inline void calc_game_phase(struct t_board *board, struct t_chess_eval *eval) {
 }
 
 inline void calc_pawn_value(struct t_board *board, struct t_chess_eval *eval) {
-    
-	// Pawn Hash Value
-	eval->pawn_evaluation = lookup_pawn_hash(board, eval);
+    eval->pawn_evaluation = lookup_pawn_hash(board, eval);
     eval->middlegame += eval->pawn_evaluation->middlegame;
     eval->endgame += eval->pawn_evaluation->endgame;
-
-	// Pawn & Piece interactions
-	for (t_chess_color color = WHITE; color <= BLACK; color++) {
-
-		t_chess_value middlegame = 0;
-		t_chess_value endgame = 0;
-
-		t_chess_color opponent = OPPONENT(color);
-		t_bitboard opponents_pieces = board->occupied[opponent] ^ board->pieces[opponent][PAWN];
-
-		// find the direction of a pawn push
-		int forward = 8 - 16 * color;
-		t_bitboard pawn_bitboard = board->piecelist[PAWN + color * 8];
-
-		//------------------------------------------------------------------------------------------
-		// Give a bonus for all opponents pieces which can be 
-		// captured by a pawn
-		//------------------------------------------------------------------------------------------
-		t_bitboard threats = (((pawn_bitboard & B8H1) << 7) >> (16 * color)) & opponents_pieces;
-
-		threats |= (((pawn_bitboard & A8G1) << 9) >> (16 * color)) & opponents_pieces;
-		int count = popcount(threats);
-
-		middlegame += count * 5;
-		endgame += count * 5;
-
-		//------------------------------------------------------------------------------------------
-		// Give a bonus for all opponents pieces which can attacked
-		// by a pawn push
-		//------------------------------------------------------------------------------------------
-
-		// All pawn pushes
-		t_bitboard moves = (((pawn_bitboard << 8) >> (16 * color)) & ~(board->all_pieces)) & ~rank_mask[color][EIGHTH_RANK];
-
-		//  Double push
-		moves |= ((((moves & rank_mask[color][THIRD_RANK]) << 8) >> (16 * color)) & ~(board->all_pieces));
-		//moves &= threats;
-
-		threats = (((moves & B8H1) << 7) >> (16 * color)) & opponents_pieces;
-		count = popcount(threats);
-
-		middlegame += count * 12;
-		endgame += count * 5;
-
-		threats = (((moves & A8G1) << 9) >> (16 * color)) & opponents_pieces;
-		count = popcount(threats);
-
-		middlegame += count * 12;
-		endgame += count * 5;
-
-		//-- Add to board scores
-		eval->middlegame += middlegame * (1 - color * 2);
-		eval->endgame += endgame * (1 - color * 2);
-	}
 }
 
 static inline int square_distance(int s1, int s2)
 {
-	return max(abs(RANK(s1) - RANK(s2)), abs(COLUMN(s1) - COLUMN(s2)));
+	int r = abs(RANK(s1) - RANK(s2));
+	int c = abs(COLUMN(s1) - COLUMN(s2));
+	if (r > c)
+		return r;
+	else
+		return c;
 };
 
 inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
@@ -149,8 +98,6 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
     t_bitboard b;
 	t_bitboard moves;
 	int move_count;
-	int rank_move_count;
-	int file_move_count;
 	struct t_pawn_hash_record *pawn_record = eval->pawn_evaluation;
 
 	for (color = WHITE; color <= BLACK; color++) {
@@ -199,18 +146,14 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 			moves &= _not_occupied;
 
 			//-- Mobility (along ranks)
-			rank_move_count = popcount(moves & square_rank_mask[square]);
-			middlegame += horizontal_rook_mobility[MIDDLEGAME][rank_move_count];
-			endgame += horizontal_rook_mobility[ENDGAME][rank_move_count];
+			move_count = popcount(moves & square_rank_mask[square]);
+			middlegame += horizontal_rook_mobility[MIDDLEGAME][move_count];
+			endgame += horizontal_rook_mobility[ENDGAME][move_count];
 
 			//-- Mobility (along files)
-			file_move_count = popcount(moves & square_column_mask[square]);
-			middlegame += vertical_rook_mobility[MIDDLEGAME][file_move_count];
-			endgame += vertical_rook_mobility[ENDGAME][file_move_count];
-
-			//-- Combined mobility (to detect trapped pieces)
-			middlegame += trapped_rook[MIDDLEGAME][rank_move_count + file_move_count];
-			endgame += trapped_rook[ENDGAME][rank_move_count + file_move_count];
+			move_count = popcount(moves & square_column_mask[square]);
+			middlegame += vertical_rook_mobility[MIDDLEGAME][move_count];
+			endgame += vertical_rook_mobility[ENDGAME][move_count];
 
 			// piece-square tables
 			middlegame += piece_square_table[piece][MIDDLEGAME][square];
@@ -243,11 +186,7 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 			bishop_moves &= _not_occupied;
 
 			//-- Mobility
-			move_count = popcount((rook_moves & square_column_mask[square]) | bishop_moves);
-			middlegame += queen_mobility[MIDDLEGAME][move_count];
-
-			//move_count = popcount(rook_moves | bishop_moves);
-			//endgame += queen_mobility[ENDGAME][move_count];
+			middlegame += popcount((rook_moves & square_column_mask[square]) | bishop_moves);
 
 			//-- piece-square tables
 			middlegame += piece_square_table[piece][MIDDLEGAME][square];
@@ -363,9 +302,7 @@ inline void calc_passed_pawns(struct t_board *board, struct t_chess_eval *eval) 
 		t_bitboard b = pawn_record->passed[color];
 		while (b){
 
-			//-- Yes!  
-			//-- Where are they?
-
+			//-- Yes!  Where are they?
 			t_chess_square square = bitscan_reset(&b);
 			int rank = RANK(square);
 			if (color) rank = (7 - rank);
@@ -375,8 +312,11 @@ inline void calc_passed_pawns(struct t_board *board, struct t_chess_eval *eval) 
 
 			//-- Is piece in front of passed pawn
 			if (forward_squares[color][square] & board->occupied[color]){
-				middlegame -= (bonus / 2);
-				endgame -= (bonus / 2);
+
+				//-- 2015-03-09
+				// tries += bonus / 4 and += bonus / 3 but didn't improve
+				middlegame += bonus / 5;
+				endgame += bonus / 5;
 			}
 			else {
 
@@ -387,34 +327,46 @@ inline void calc_passed_pawns(struct t_board *board, struct t_chess_eval *eval) 
 					if ((forward_squares[color][square] & eval->attacks[opponent][BLANK]) == 0){
 
 						//-- No! Free path!
-
-						// Test bonus division 2014-12-26
-						// /4 /4 =
+						// 2013-10-10: m += b / 2; e += b / 1;
+						// 2015-03-09: m += b / 4; e += b / 2; +14 ELO
+						// 2015-03-09: m += b / 4; e += b / 3; +6 ELO
 						middlegame += bonus / 4;
 						endgame += bonus / 2;
 
 					}
 					//-- Yes it's attacked
 					else{
-						//middlegame += bonus / 5;
-						endgame += bonus / 5;
+						// 2013-10-10: m += b / 3; e += b / 2;
+						// 2015-03-09: m += b / 6; e += b / 3; +13 ELO
+						// 2015-03-09: m += b / 6; e += b / 4; +13 ELO
+						// 2015-03-09: m += b / 6; e += b / 6; -8 ELO
+						// 2015-03-09: m += b / 4; e += b / 3; -13 ELO
+						// 2015-03-09: m += b / 4; e += 0;     +5 ELO
+						middlegame += bonus / 6;
+						endgame += bonus / 3;
 					}
 
 					//-- Add King Tropism
 					int distance = square_distance(square, board->king_square[opponent]) - square_distance(square, board->king_square[color]);
 					if (distance > 1)
-						endgame += (bonus / 6);
+						// 2013-10-10: e += b / 5;
+						// 2015-03-09: e += b / 3; +1 ELO
+						// 2015-03-09: e += b / 4; -1 ELO
+						// 2015-03-09: e += b / 2; -8 ELO
+						endgame += (bonus / 5);
+
 				}
 			}
 
 			//-- Is a Rook behind the passed pawn
 			if (forward_squares[opponent][square] & board->pieces[color][ROOK]){
-				middlegame += rook_behind_passed[color][MIDDLEGAME];
-				endgame += rook_behind_passed[color][ENDGAME];
+				middlegame += MG_ROOK_BEHIND_PASSED_PAWN * (1 - color * 2);
+				endgame += EG_ROOK_BEHIND_PASSED_PAWN * (1 - color * 2);
 			}
+
 		}
 
-		//-- Add to board scores
+		//-- Add the score to the Eval
 		eval->middlegame += middlegame;
 		eval->endgame += endgame;
 	}
