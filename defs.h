@@ -27,6 +27,10 @@
 	#define ENGINE_VERSION					VERSION_NUMBER " x64"
 #endif
 
+#if defined MINGW64
+	#define ENGINE_VERSION					VERSION_NUMBER " x64"
+#endif // defined
+
 #define ENGINE_AUTHOR						"Steve Maughan"
 #include <cassert>
 

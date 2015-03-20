@@ -6,6 +6,7 @@
 //===========================================================//
 
 #include <windows.h>
+#include <Winbase.h>
 #include <stdio.h>
 #include <string.h>
 
