@@ -206,19 +206,11 @@ void uci_set_mode()
 	send_command(s);
 	uci.options.chess960 = FALSE;
 
-    strcpy(s,"option name EvalTest type check default false");
-    uci.options.eval_test = FALSE;
-    send_command(s);
-
-    sprintf(s, "option name UCI_EngineAbout type string default Maverick (v%s) by Steve Maughan www.chessprogramming.net", ENGINE_VERSION);
+    sprintf(s, "option name UCI_EngineAbout type string default Maverick %s by Steve Maughan www.chessprogramming.net", ENGINE_VERSION);
     send_command(s);
 
 	strcpy(s, "option name Show Search Statistics type check default true");
 	uci.options.show_search_statistics = TRUE;
-	send_command(s);
-
-	strcpy(s, "option name Smart Book type check default false");
-	uci.options.smart_book = FALSE;
 	send_command(s);
 
 	strcpy(s, "uciok");
@@ -372,14 +364,6 @@ void uci_setoption(char *s)
 		return;
 	}
 
-	if ((index_of("EvalTest", s) == 2) || (index_of("EVALTEST", s) == 2) || (index_of("evaltest", s) == 2)){
-		if (!strcmp(word_index(4, s), "true") || !strcmp(word_index(4, s), "TRUE"))
-			uci.options.eval_test = TRUE;
-		else
-			uci.options.eval_test = FALSE;
-		return;
-	}
-
 	if((index_of("Statistics", s) == 4) || (index_of("statistics", s) == 4) || (index_of("STATISTICS", s) == 4)){
         if (!strcmp(word_index(6, s), "true") || !strcmp(word_index(6, s), "TRUE"))
         	uci.options.show_search_statistics = TRUE;
@@ -388,13 +372,6 @@ void uci_setoption(char *s)
 		return;
     }
 
-	if ((index_of("Smart", s) == 2) || (index_of("smart", s) == 2) || (index_of("SMART", s) == 2)){
-		if (!strcmp(word_index(4, s), "true") || !strcmp(word_index(4, s), "TRUE"))
-			uci.options.smart_book = TRUE;
-		else
-			uci.options.smart_book = FALSE;
-		return;
-	}
 }
 
 /*=======================================================*/
@@ -759,11 +736,6 @@ void set_uci_level(char *s, t_chess_color color)
     i = index_of("DEPTH",s);
     if (i >= 0)
         uci.level.depth = number_index(i + 1, s);
-
-	//-- Fixed 5 ply test mode
-	if (uci.options.eval_test){
-		uci.level.depth = 5;
-	}
 
     i = index_of("nodes",s);
     if (i>=0)

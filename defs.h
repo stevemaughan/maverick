@@ -15,14 +15,16 @@
 	#define ENGINE_VERSION					VERSION_NUMBER " x32"
 #endif
 
-#if NOPOPCOUNT
-	#define ENGINE_VERSION						VERSION_NUMBER "x64 (No Popcount)"
-#else 
-#if _DEBUG
-	#define ENGINE_VERSION						VERSION_NUMBER " x64 Debug"
-#else
-	#define ENGINE_VERSION					VERSION_NUMBER " x64"
+#if WIN64_CODE && NOPOPCOUNT
+	#define ENGINE_VERSION					VERSION_NUMBER " x64 (No Popcount)"
 #endif
+
+#if WIN64_CODE && _DEBUG
+	#define ENGINE_VERSION					VERSION_NUMBER " x64 Debug"
+#endif
+
+#if WIN64_CODE
+	#define ENGINE_VERSION					VERSION_NUMBER " x64"
 #endif
 
 #define ENGINE_AUTHOR						"Steve Maughan"
@@ -231,6 +233,9 @@ struct t_chess_eval
 	t_chess_value							static_score;
 	t_bitboard								attacklist[15];
 	t_bitboard								*attacks[2];
+	t_bitboard								king_zone[2];
+	int										king_attack_count[2];
+	int										king_attack_pressure[2];
 };
 
 //===========================================================//
@@ -271,6 +276,7 @@ struct t_pawn_hash_record
     t_bitboard								weak[2];
 	t_bitboard								open_file;
 	t_bitboard								semi_open_file[2];
+	t_chess_value							king_pressure[2];
 	int										pawn_count[2];
 };
 
@@ -356,8 +362,6 @@ struct t_uci_options
     int										pawn_hash_table_size;
     BOOL									current_line;
     BOOL									show_search_statistics;
-	BOOL									eval_test;
-	BOOL									smart_book;
 	BOOL									chess960;
 };
 

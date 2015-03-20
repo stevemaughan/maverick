@@ -17,10 +17,16 @@
 unsigned long time_now()
 {
 #if WIN32_CODE
-    return GetTickCount();
-#else
+	return GetTickCount();
+#endif
+
+#if WIN64_CODE
 	return GetTickCount64();
 #endif
+
+#if MINGW64
+	return GetTickCount();
+#endif // MINGW64
 }
 
 int index_of(char *substr, char *s)
@@ -164,26 +170,34 @@ void qsort_moves(struct t_move_list *move_list, int first, int last)
 
     low = first;
     high = last;
+
 	assert(first <= last);
 	assert(first >= 0);
 	assert(last < 256);
-    midval = (move_list->value[low] + move_list->value[high]) >> 1;
-    while (low < high) {
-        while ((move_list->value[low] > midval) && (low < last))
+
+	midval = (move_list->value[low] + move_list->value[high]) >> 1;
+
+	while (low < high) {
+
+		while ((move_list->value[low] > midval) && (low < last))
             low++;
         while ((move_list->value[high] < midval) && (high > first))
             high--;
+
         if (low<=high) {
             temp_move = move_list->move[low];
             move_list->move[low] = move_list->move[high];
             move_list->move[high] = temp_move;
-            temp_value = move_list->value[low];
+
+			temp_value = move_list->value[low];
             move_list->value[low] = move_list->value[high];
             move_list->value[high] = temp_value;
-            low++;
+
+			low++;
             high--;
         }
     }
+
     if (first < high) qsort_moves(move_list, first, high);
     if (low < last) qsort_moves(move_list, low, last);
 }

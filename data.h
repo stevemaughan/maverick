@@ -117,8 +117,12 @@ extern const t_chess_value double_pawn_penalty[2][8];
 //-- King Safety
 extern t_bitboard king_castle_squares[2][2];
 extern t_bitboard intact_pawns[2][2];
-extern t_bitboard pawn_shield[2][2][8];
+extern t_bitboard wrecked_pawns[2][2];
+extern t_bitboard pawn_wedge_mask[2][2];
 extern const t_chess_value pawn_storm[8];
+extern t_bitboard king_zone[64];								// Square around the king which are used in the king safety evaluation
+extern const t_chess_value king_safety[8];
+extern const t_chess_value king_pressure_squares[2][64];
 
 // Magics
 extern t_bitboard rook_magic_moves[64][4096];

@@ -10,9 +10,9 @@
 #include <ctype.h>
 #include <assert.h>
 #include <Windows.h>
+#include <shlwapi.h>
 #include <iostream>
 
-#include "Shlwapi.h"
 #include "defs.h"
 #include "data.h"
 #include "procs.h"
@@ -64,7 +64,7 @@ int book_count()
 	PathAddBackslash(file_path);
 
 	CHAR szSearch[2048] = { 0 };
-	
+
 	strcpy(szSearch, file_path);
 	strcat(szSearch, "*.bin");
 
@@ -100,7 +100,7 @@ char *book_string()
 
 	strcpy(szSearch, file_path);
 	strcat(szSearch, "*.bin");
-	
+
     HANDLE hFind = NULL;
     WIN32_FIND_DATAA FindFileData;
     LARGE_INTEGER size;

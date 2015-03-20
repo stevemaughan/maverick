@@ -69,44 +69,16 @@ void root_search(struct t_board *board)
 	if (uci.opening_book.use_own_book && !uci.level.infinite) {
 		struct t_move_record *move;
 
-		//-- Play a "Smart" Opening book move
-		int book_count = book_move_count(board);
-		if (uci.options.smart_book && book_count > 3){
-			fill_opening_move_list(board, move_list);
-
-			//-- If only one move then play the move immediately
-			if (move_list->count == 1){
-				move = move_list->move[0];
-				if (move != NULL) {
-					board->pv_data[0].best_line[0] = move;
-					board->pv_data[0].best_line_length = 1;
-					send_info("Maverick Smart Book Move!");
-					while (uci.level.ponder && !uci.stop)
-						Sleep(1);
-					do_uci_bestmove(board);
-					return;
-				}
-			}
-
-			//-- Make sure there is limited time to "think"
-			if (early_move_time < abort_move_time)
-				abort_move_time = early_move_time;
-			early_move_time = abort_move_time;
-			target_move_time = abort_move_time;
-		}
-
-		//-- Probe the opening book as normal
-		else{
-			move = probe_book(board);
-			if (move != NULL) {
-				board->pv_data[0].best_line[0] = move;
-				board->pv_data[0].best_line_length = 1;
-				send_info("Maverick Book Move!");
-				while (uci.level.ponder && !uci.stop)
-					Sleep(1);
-				do_uci_bestmove(board);
-				return;
-			}
+		//-- Probe the opening book
+		move = probe_book(board);
+		if (move != NULL) {
+			board->pv_data[0].best_line[0] = move;
+			board->pv_data[0].best_line_length = 1;
+			send_info("Maverick Book Move!");
+			while (uci.level.ponder && !uci.stop)
+				Sleep(1);
+			do_uci_bestmove(board);
+			return;
 		}
 	}
 

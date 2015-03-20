@@ -186,13 +186,23 @@ void init_bitboards()
 
 		//-- Connected passed pawn mask
 		connected_pawn_mask[s] = king_mask[s] & neighboring_file[COLUMN(s)];
+
+		//-- Vulnerable squares around king
+
+		king_zone[s] = SQUARE64(s);
+		if (COLUMN(s) > 0)
+			king_zone[s] |= SQUARE64(s - 1);
+		if (COLUMN(s) < 7)
+			king_zone[s] |= SQUARE64(s + 1);
+		king_zone[s] |= ((king_zone[s] << 8) | (king_zone[s] >> 8));
+
     }
 
 	//-- King Castle Square
-	king_castle_squares[WHITE][KINGSIDE] = (SQUARE64(F1) | SQUARE64(G1) | SQUARE64(H1));
-	king_castle_squares[WHITE][QUEENSIDE] = (SQUARE64(A1) | SQUARE64(B1) | SQUARE64(C1));
-	king_castle_squares[BLACK][KINGSIDE] = (SQUARE64(F8) | SQUARE64(G8) | SQUARE64(H8));
-	king_castle_squares[BLACK][QUEENSIDE] = (SQUARE64(A8) | SQUARE64(B8) | SQUARE64(C8));
+	king_castle_squares[WHITE][KINGSIDE] = (SQUARE64(F1) | SQUARE64(G1) | SQUARE64(H1) | SQUARE64(F2) | SQUARE64(G2) | SQUARE64(H2));
+	king_castle_squares[WHITE][QUEENSIDE] = (SQUARE64(A1) | SQUARE64(B1) | SQUARE64(C1) | SQUARE64(A2) | SQUARE64(B2) | SQUARE64(C2));
+	king_castle_squares[BLACK][KINGSIDE] = (SQUARE64(F8) | SQUARE64(G8) | SQUARE64(H8) | SQUARE64(F7) | SQUARE64(G7) | SQUARE64(H7));
+	king_castle_squares[BLACK][QUEENSIDE] = (SQUARE64(A8) | SQUARE64(B8) | SQUARE64(C8) | SQUARE64(A7) | SQUARE64(B7) | SQUARE64(C7));
 
 	//-- Pawn Shelter
 	intact_pawns[WHITE][KINGSIDE] = (SQUARE64(F2) | SQUARE64(G2) | SQUARE64(H2));
@@ -200,7 +210,17 @@ void init_bitboards()
 	intact_pawns[BLACK][KINGSIDE] = (SQUARE64(F7) | SQUARE64(G7) | SQUARE64(H7));
 	intact_pawns[BLACK][QUEENSIDE] = (SQUARE64(A7) | SQUARE64(B7) | SQUARE64(C7));
 
+	wrecked_pawns[WHITE][KINGSIDE] = (SQUARE64(G2) | SQUARE64(G3));
+	wrecked_pawns[WHITE][QUEENSIDE] = (SQUARE64(B2) | SQUARE64(B3));
+	wrecked_pawns[BLACK][KINGSIDE] = (SQUARE64(G7) | SQUARE64(G6));
+	wrecked_pawns[BLACK][QUEENSIDE] = (SQUARE64(B7) | SQUARE64(B6));
 
+	pawn_wedge_mask[WHITE][KINGSIDE] = SQUARE64(F6);
+	pawn_wedge_mask[WHITE][QUEENSIDE] = SQUARE64(C6);
+	pawn_wedge_mask[BLACK][KINGSIDE] = SQUARE64(F3);
+	pawn_wedge_mask[BLACK][QUEENSIDE] = SQUARE64(C3);
+
+	assert(king_zone[C1] == (SQUARE64(B1) | SQUARE64(C1) | SQUARE64(D1) | SQUARE64(B2) | SQUARE64(C2) | SQUARE64(D2)));
 	assert(connected_pawn_mask[C2] == (SQUARE64(B1) | SQUARE64(B2) | SQUARE64(B3) | SQUARE64(D1) | SQUARE64(D2) | SQUARE64(D3)));
     assert(pawn_attackers[WHITE][E4] == (SQUARE64(D3) | SQUARE64(F3)));
     assert(pawn_attackers[BLACK][H4] == SQUARE64(G5));

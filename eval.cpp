@@ -36,9 +36,11 @@ t_chess_value calc_evaluation(struct t_board *board, struct t_chess_eval *eval) 
 
 	t_chess_value score;
 
-	//-- Normal Position
-	eval->middlegame = 0;
-    eval->endgame = 0;
+	//-- Normal Position, so initialize the values
+	init_eval(eval);
+
+	eval->king_zone[WHITE] = king_zone[board->king_square[WHITE]];
+	eval->king_zone[BLACK] = king_zone[board->king_square[BLACK]];
 
     //-- Are we in the middle game, endgame or somewhere in between
 	calc_game_phase(board, eval);
@@ -96,6 +98,7 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
     t_chess_piece piece;
     t_chess_piece piece_type;
     t_bitboard b;
+	t_bitboard attack_squares;
 	t_bitboard moves;
 	int move_count;
 	struct t_pawn_hash_record *pawn_record = eval->pawn_evaluation;
@@ -106,6 +109,7 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 		t_chess_value endgame = 0;
 
 		opponent = OPPONENT(color);
+
 
 		//=========================================================
 		//-- Rooks first
@@ -119,9 +123,9 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 		t_bitboard _not_occupied = ~(board->occupied[color] & _all_pieces);
 
 		//-- Rooks on the 7th
-		if (b & rank_mask[color][6] && board->pieces[opponent][KING] & rank_mask[color][7]){
-			middlegame = +MG_ROOK_ON_7TH;
-			endgame = +MG_ROOK_ON_7TH;
+		if ((b & rank_mask[color][6]) && (board->pieces[opponent][KING] & rank_mask[color][7])){
+			middlegame += MG_ROOK_ON_7TH;
+			endgame += MG_ROOK_ON_7TH;
 		}
 
 		//-- Rooks on Open file
@@ -155,6 +159,12 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 			middlegame += vertical_rook_mobility[MIDDLEGAME][move_count];
 			endgame += vertical_rook_mobility[ENDGAME][move_count];
 
+			//-- King safety
+			if (attack_squares = moves & eval->king_zone[opponent]){
+				eval->king_attack_count[opponent]++;
+				eval->king_attack_pressure[opponent] += popcount(attack_squares) * 40;
+			}
+
 			// piece-square tables
 			middlegame += piece_square_table[piece][MIDDLEGAME][square];
 			endgame += piece_square_table[piece][ENDGAME][square];
@@ -187,6 +197,12 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 
 			//-- Mobility
 			middlegame += popcount((rook_moves & square_column_mask[square]) | bishop_moves);
+
+			//-- King safety
+			if (attack_squares = (rook_moves | bishop_moves) & eval->king_zone[opponent]){
+				eval->king_attack_count[opponent]++;
+				eval->king_attack_pressure[opponent] += 80 * popcount(attack_squares);
+			}
 
 			//-- piece-square tables
 			middlegame += piece_square_table[piece][MIDDLEGAME][square];
@@ -228,6 +244,12 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 			//middlegame -= trapped_bishop[MIDDLEGAME][move_count];
 			//endgame -= trapped_bishop[ENDGAME][move_count];
 
+			//-- King safety
+			if (attack_squares = moves & eval->king_zone[opponent]){
+				eval->king_attack_count[opponent]++;
+				eval->king_attack_pressure[opponent] += 20 * popcount(attack_squares);
+			}
+
 			// piece-square tables
 			middlegame += piece_square_table[piece][MIDDLEGAME][square];
 			endgame += piece_square_table[piece][ENDGAME][square];
@@ -252,6 +274,14 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 			//-- Generate moves
 			moves = knight_mask[square];
 			eval->attacklist[piece] |= moves;
+
+			//-- King safety
+			if (attack_squares = moves & eval->king_zone[opponent]){
+				eval->king_attack_count[opponent]++;
+				eval->king_attack_pressure[opponent] += 20 * popcount(attack_squares);
+			}
+
+			//-- Remove the square occupied by own pieces
 			moves &= _not_occupied;
 
 			//-- Connected to another knight
@@ -372,13 +402,28 @@ inline void calc_passed_pawns(struct t_board *board, struct t_chess_eval *eval) 
 	}
 }
 
-inline void calc_king_safety(struct t_board *board, struct t_chess_eval *eval) {
+inline void calc_king_safety(struct t_board *board, struct t_chess_eval *eval) 
+{
+	//eval->king_attack_pressure[WHITE] += king_pressure_squares[WHITE][board->king_square[WHITE]];
+	//eval->king_attack_pressure[BLACK] += king_pressure_squares[BLACK][board->king_square[BLACK]];
 
+	eval->middlegame = eval->middlegame + (eval->king_attack_pressure[BLACK] * king_safety[eval->king_attack_count[BLACK] & 7]) / 128 - (eval->king_attack_pressure[WHITE] * king_safety[eval->king_attack_count[WHITE] & 7]) / 128;
 }
 
-void init_eval(struct t_chess_eval *eval) {
-    eval->attacks[WHITE] = eval->attacklist;
-    eval->attacks[BLACK] = eval->attacklist + 8;
+void init_eval(struct t_chess_eval *eval) 
+{
+    
+	eval->middlegame = 0;
+	eval->endgame = 0;
+
+	for (t_chess_color color = WHITE; color <= BLACK; color++){
+		
+		eval->attacks[color] = eval->attacklist + (8 * color);
+		
+		eval->king_attack_count[color] = 0;
+		eval->king_attack_pressure[color] = 0;
+		eval->king_zone[color] = 0;
+	}
 }
 
 void init_eval_function() {

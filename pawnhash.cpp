@@ -23,11 +23,13 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
 
     // Look-up in pawn hash table
     struct t_pawn_hash_record *pawn_record = &pawn_hash[board->pawn_hash & pawn_hash_mask];
-    // See if already exists
+    
+	// See if already exists
     if (pawn_record->key == board->pawn_hash) {
         for (color = WHITE; color <= BLACK; color++) {
             eval->attacks[color][PAWN] = pawn_record->attacks[color];
-        }
+			eval->king_attack_pressure[color] = pawn_record->king_pressure[color];
+		}
         return pawn_record;
     }
 
@@ -67,8 +69,11 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
 
     // attacks
     for (color = WHITE; color <= BLACK; color++) {
+		pawn_record->king_pressure[color] = 0;
+		opponent = OPPONENT(color);
         p = board->pieces[color][PAWN];
-        pawn_record->attacks[color] = (((p & B8H1) << 7) >> (16 * color)) | (((p & A8G1) << 9) >> (16 * color));
+		b = (((p & B8H1) << 7) >> (16 * color)) | (((p & A8G1) << 9) >> (16 * color));
+		pawn_record->attacks[color] = b;
     }
 
     // passed
@@ -168,13 +173,17 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
     pawn_record->middlegame = middlegame;
     pawn_record->endgame = endgame;
 
-	//-- Pawn Storm
+	//-- Pawn Storm 
 	eval_pawn_storm(board, pawn_record);
+
+	//-- Pawn Shield
+	eval_pawn_shelter(board, pawn_record);
 
     //-- Transfer key Bitboard to the Board structure
     for (color = WHITE; color <= BLACK; color++) {
         eval->attacks[color][PAWN] = pawn_record->attacks[color];
-    }
+		eval->king_attack_pressure[color] += pawn_record->king_pressure[color];
+	}
 
     return pawn_record;
 
@@ -224,6 +233,7 @@ void set_pawn_hash(unsigned int size)
             pawn_hash[i].weak[c] = 0;
 			pawn_hash[i].semi_open_file[c] = 0;
 			pawn_hash[i].pawn_count[c] = 0;
+			pawn_hash[i].king_pressure[c] = 0;
         }
     }
     uci.options.pawn_hash_table_size = size;
@@ -259,7 +269,7 @@ void eval_pawn_storm(struct t_board *board, struct t_pawn_hash_record *pawn_reco
 
 	if (board->castling)
 	{
-		exit;
+		return;
 	}
 	//-- White castled kingside and Black castled queenside
 	else if ((board->pieces[WHITE][KING] & BITBOARD_KINGSIDE) && (board->pieces[BLACK][KING] & BITBOARD_QUEENSIDE)){
@@ -271,7 +281,7 @@ void eval_pawn_storm(struct t_board *board, struct t_pawn_hash_record *pawn_reco
 		b = (board->piecelist[BLACKPAWN] & BITBOARD_QUEENSIDE);
 	}
 	else
-		exit;
+		return;
 
 	int s;
 	t_chess_value middlegame = 0;
@@ -298,32 +308,41 @@ void eval_pawn_storm(struct t_board *board, struct t_pawn_hash_record *pawn_reco
 	pawn_record->middlegame += middlegame;
 
 }
-//
-////-- Evaluate Pawn Shelter
-//void eval_pawn_shelter(struct t_board *board, struct t_pawn_hash_record *pawn_record)
-//{
-//	
-//
-//	//- Do this for black and white
-//	for (t_chess_color color = WHITE; color <= BLACK; color++){
-//
-//		t_chess_value middlegame = 0;
-// 
-//		//-- Has the king castled kingside?
-//		if (board->pieces[color][KING] & king_castle_squares[color][KINGSIDE]){
-//			
-//			//-- Bonus if pawn shield is in tact
-//			if (board->pieces[color][PAWN] & intact_pawns[color][KINGSIDE] == intact_pawns[color][KINGSIDE]){
-//				middlegame += MG_INTACT_PAWN_SHIELD;
-//			}
-//			else if (1){
-//
-//			}
-//
-//
-//		}
-//	}
-//
-//
-//
-//}
+
+//-- Evaluate Pawn Shelter
+void eval_pawn_shelter(struct t_board *board, struct t_pawn_hash_record *pawn_record)
+{
+
+	//- Do this for black and white
+	for (t_chess_color color = WHITE; color <= BLACK; color++){
+
+		t_chess_value middlegame = 0;
+		t_chess_color opponent = OPPONENT(color);
+
+		for (int castle_side = KINGSIDE; castle_side <= QUEENSIDE; castle_side++){
+
+			//-- Has the king castled kingside?
+			if (board->pieces[color][KING] & king_castle_squares[color][castle_side]){
+
+				//-- Bonus if pawn shield is in tact
+				if ((board->pieces[color][PAWN] & intact_pawns[color][castle_side]) == intact_pawns[color][castle_side]){
+					middlegame += MG_INTACT_PAWN_SHIELD;
+				}
+
+				//-- Panalty if there isn't a decent pawn shield
+				else if (!(board->pieces[color][PAWN] & wrecked_pawns[color][castle_side])){
+					middlegame += MG_PAWN_SHIELD_WRECKED;
+					pawn_record->king_pressure[color] += 50;
+				}
+
+				//-- See if opponent has a F6 wedge
+				if (board->pieces[opponent][PAWN] & pawn_wedge_mask[opponent][castle_side]){
+					middlegame -= MG_F6_PAWN_WEDGE;
+					pawn_record->king_pressure[color] += 50;
+				}
+			}
+		}
+
+		pawn_record->middlegame += middlegame * (1 - 2 * color);
+	}
+}

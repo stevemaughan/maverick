@@ -19,6 +19,11 @@
 #include "procs.h"
 #include "bittwiddle.h"
 
+#ifndef max
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 t_move_record *lookup_move(struct t_board *board, char *move_string) {
 
     t_chess_square from_square = name_to_index(move_string);
@@ -84,7 +89,7 @@ BOOL castle_integrity(struct t_board *board)
 			if (move->from_square != castle[i].king_from)
 				ok = FALSE;
 
-		}		
+		}
 	}
 
 	if (!ok)
@@ -634,7 +639,7 @@ void init_960_castling(struct t_board *board, t_chess_square king_square, t_ches
 			return;
 
 		board->castling_squares_changed = TRUE;
-		
+
 		king_to = G1 + (56 * color);
 		castle[castle_index].rook_to = king_to - 1;
 
