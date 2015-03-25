@@ -60,11 +60,12 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 
 	//-- Mate Distance Pruning
 	if (CHECKMATE - ply <= alpha){
-		assert(alpha >= -CHECKMATE && alpha <= CHECKMATE);
 		return alpha;
 	}
 	else if (-CHECKMATE + ply >= beta){
-		assert(beta >= -CHECKMATE && beta <= CHECKMATE);
+		return beta;
+	}
+	else if ((!board->in_check) && (-CHECKMATE + ply + 2 >= beta)){
 		return beta;
 	}
 
@@ -265,7 +266,6 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 
 			//-- Store in the hash table
 			poke(board->hash, e, ply, depth, HASH_LOWER, pv->current_move);
-			assert(e >= -CHECKMATE && e <= CHECKMATE);
 			return e;
         }
 
@@ -304,7 +304,6 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 
 }
 
-
 t_chess_value qsearch_plus(struct t_board *board, int ply, int depth, t_chess_value alpha, t_chess_value beta) {
 
 	//-- Principle Variation
@@ -328,6 +327,9 @@ t_chess_value qsearch_plus(struct t_board *board, int ply, int depth, t_chess_va
 		return alpha;
 	}
 	else if (-CHECKMATE + ply >= beta){
+		return beta;
+	}
+	else if ((!board->in_check) && (-CHECKMATE + ply + 2 >= beta)){
 		return beta;
 	}
 

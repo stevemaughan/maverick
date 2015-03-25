@@ -187,6 +187,7 @@ struct t_move_record
     int										index;
     t_chess_value							history;
     int										mvvlva;
+	struct t_move_record					*refutation;
 };
 
 struct t_move_list
@@ -198,6 +199,7 @@ struct t_move_list
 	t_bitboard								pinned_pieces;		// A bitboard which stores the position of pinned pieces
     struct t_move_record					*move[256];			// The moves!
     signed long long						value[256];			// Notional values for all of the moves
+	int										see[256];			// SEE score of moves
 };
 
 struct t_undo
@@ -312,6 +314,7 @@ struct t_pv_data
     int										legal_moves_played;
     int										best_line_length;
     struct t_move_record					*best_line[MAXPLY + 1];
+	struct t_pv_data						*previous_pv;
 };
 
 //===========================================================//
@@ -423,9 +426,10 @@ struct t_magic_structure
 #define MOVE_ORDER_CAPTURE					(MAX_CHESS_INT >> 2)
 #define MOVE_ORDER_KILLER1					(MAX_CHESS_INT >> 3)
 #define MOVE_ORDER_KILLER2					(MAX_CHESS_INT >> 4)
-#define MOVE_ORDER_KILLER3					(MAX_CHESS_INT >> 6)
-#define MOVE_ORDER_KILLER4					(MAX_CHESS_INT >> 7)
-#define MOVE_ORDER_ETC						(MAX_CHESS_INT >> 5)
+#define MOVE_ORDER_KILLER3					(MAX_CHESS_INT >> 7)
+#define MOVE_ORDER_KILLER4					(MAX_CHESS_INT >> 8)
+#define MOVE_ORDER_ETC						(MAX_CHESS_INT >> 6)
+#define MOVE_ORDER_REFUTATION				(MAX_CHESS_INT >> 5)
 
 //===========================================================//
 // Multi-PV

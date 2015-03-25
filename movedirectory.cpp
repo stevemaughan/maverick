@@ -760,8 +760,10 @@ void init_move_directory()
 
     //-- Fill in the data
     for (i = 0, move = &xmove_list[0]; i < GLOBAL_MOVE_COUNT; i++, move++) {
-        move->history = 0;
-        move->index = i;
+        
+		move->index = i;
+		move->history = 0;
+		move->refutation = NULL;
         move->from_to_bitboard = SQUARE64(move->from_square) | SQUARE64(move->to_square);
         move->capture_mask = 0;
         if (move->captured && (move->move_type != MOVE_PxP_EP))
@@ -860,5 +862,6 @@ void clear_history()
 
 	for (int i = 0; i < GLOBAL_MOVE_COUNT; i++, move++) {
 		move->history = 0;
+		move->refutation = NULL;
 	}
 }

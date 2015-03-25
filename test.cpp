@@ -658,6 +658,7 @@ BOOL test_search()
 	while (uci.engine_state != UCI_ENGINE_WAITING)
 		Sleep(1);
 
+	uci_new_game(position);
 	uci_position(position, "position fen r2q1rk1/2pb1p1p/pp1bpPp1/4n1P1/1n2P3/2N1BN1Q/P1P4P/2KR1B1R b - - moves");
 	uci_go("go depth 12");
 

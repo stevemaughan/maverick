@@ -251,6 +251,10 @@ void init_board(struct t_board *board)
     board->pieces[BLACK] = board->piecelist + 8;
 
     for (i = 0; i <= MAXPLY; i++) {
+		if (i == 0)
+			board->pv_data[i].previous_pv = NULL;
+		else
+			board->pv_data[i].previous_pv = &board->pv_data[i - 1];
         board->pv_data[i].best_line_length = 0;
         board->pv_data[i].killer1 = NULL;
         board->pv_data[i].killer2 = NULL;

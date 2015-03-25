@@ -117,7 +117,8 @@ void eval_pawn_shelter(struct t_board *board, struct t_pawn_hash_record *pawn_re
 void eval_pawn_storm(struct t_board *board, struct t_pawn_hash_record *pawn_record);
 
 //-- Static Exchange Evaluation (see.cpp)
-t_chess_value see(struct t_board *board, struct t_move_record *move, t_chess_value threshold);
+BOOL see(struct t_board *board, struct t_move_record *move, t_chess_value threshold);
+BOOL see_square(struct t_board *board, t_chess_square to_square, t_chess_value threshold);
 
 //-- Root Search (root.c)
 void root_search(struct t_board *board);

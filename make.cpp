@@ -906,6 +906,7 @@ BOOL make_next_move(struct t_board *board, struct t_move_list *move_list, struct
 				return TRUE;
 		}
 		else{
+
 			//-- Transfer the move over the other "bad" move list
 			int j = bad_move_list->count;
 			bad_move_list->move[j] = move;

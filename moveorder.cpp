@@ -18,10 +18,16 @@ void order_moves(struct t_board *board, struct t_move_list *move_list, int ply) 
 
 	struct t_move_record *hash_move = move_list->hash_move;
     struct t_move_record *move;
-    struct t_move_record *killer1 = board->pv_data[ply].killer1;
+    
+	struct t_move_record *killer1 = board->pv_data[ply].killer1;
     struct t_move_record *killer2 = board->pv_data[ply].killer2;
     struct t_move_record *killer3 = NULL;
     struct t_move_record *killer4 = NULL;
+	
+
+	struct t_move_record *refutation = NULL;
+	if (board->pv_data[ply - 1].current_move)
+		refutation = board->pv_data[ply - 1].current_move->refutation;
 
     if (ply > 1) {
         killer3 = board->pv_data[ply - 2].killer1;
@@ -37,15 +43,17 @@ void order_moves(struct t_board *board, struct t_move_list *move_list, int ply) 
         else if (move->captured) {
             move_list->value[i] = move->mvvlva + MOVE_ORDER_CAPTURE;
         }
-        else if (move == killer1)
+		else if (move == killer1)
             move_list->value[i] = MOVE_ORDER_KILLER1;
-        else if (move == killer2)
+		else if (move == killer2)
             move_list->value[i] = MOVE_ORDER_KILLER2;
-        else if (move == killer3)
+		else if (move == refutation)
+			move_list->value[i] = MOVE_ORDER_REFUTATION;
+		else if (move == killer3)
             move_list->value[i] = MOVE_ORDER_KILLER3;
-        else if (move == killer4)
-            move_list->value[i] = MOVE_ORDER_KILLER4;
-        else
+		else if (move == killer4)
+			move_list->value[i] = MOVE_ORDER_KILLER4;
+		else
             move_list->value[i] = move->history;
     }
 }
@@ -101,11 +109,16 @@ void age_history_scores()
 }
 
 void update_killers(struct t_pv_data *pv, int depth){
+	
 	if (!pv->current_move->captured && (pv->current_move != pv->killer1)) {
 		pv->killer2 = pv->killer1;
 		pv->killer1 = pv->current_move;
 		pv->current_move->history += (depth * depth);
 	}
+
+	if (struct t_pv_data *previous = pv->previous_pv)
+		if (previous->current_move)
+			previous->current_move->refutation = pv->current_move;
 }
 
 void update_check_killers(struct t_pv_data *pv, int depth){
