@@ -255,11 +255,16 @@ void init_board(struct t_board *board)
 			board->pv_data[i].previous_pv = NULL;
 		else
 			board->pv_data[i].previous_pv = &board->pv_data[i - 1];
+		if (i < MAXPLY)
+			board->pv_data[i].next_pv = &board->pv_data[i + 1];
+		else
+			board->pv_data[i].next_pv = &board->pv_data[i + 1];
         board->pv_data[i].best_line_length = 0;
         board->pv_data[i].killer1 = NULL;
         board->pv_data[i].killer2 = NULL;
         board->pv_data[i].check_killer1 = NULL;
         board->pv_data[i].check_killer2 = NULL;
+		board->pv_data[i].in_check = FALSE;
         init_eval(board->pv_data[i].eval);
     }
 }

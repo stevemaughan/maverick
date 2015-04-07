@@ -52,6 +52,8 @@ void root_search(struct t_board *board)
 	cutoffs = 0;
 	first_move_cutoffs = 0;
 
+	pv->node_type = node_pv;
+
 	search_ply = 0;
 	deepest = 0;
 	message_update_count = 0;
@@ -113,8 +115,13 @@ void root_search(struct t_board *board)
 			//-- Evaluate the new position
 			evaluate(board, board->pv_data[1].eval);
 
+			if (board->in_check)
+				pv->reduction = 0;
+			else
+				pv->reduction = 1;
+
 			//-- Call alpha-beta recursively
-			e = -alphabeta(board, 1, search_ply - 1, -beta, -alpha);
+			e = -alphabeta(board, 1, search_ply - pv->reduction, -beta, -alpha);
 
 			//-- Test for best move so far!
 			if ((e > alpha) && !uci.stop) {
@@ -126,7 +133,7 @@ void root_search(struct t_board *board)
 					do_uci_fail_high(board, e, search_ply);
 
 					//-- Research with wider bounds
-					e = -alphabeta(board, 1, search_ply - 1, -CHESS_INFINITY, -alpha);
+					e = -alphabeta(board, 1, search_ply - pv->reduction, -CHESS_INFINITY, -alpha);
 				}
 
 				//-- If still better than everything else then update best move!

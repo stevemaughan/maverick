@@ -271,26 +271,6 @@ const t_chess_value king_pst[2][64] = {
      -10, 10, 15, 20, 20, 15, 10, -10}
 };
 
-const t_chess_value king_pressure_squares[2][64] = {
-	{ 1, 0, 0, 0, 0, 1, 0, 1,
-	1, 1, 2, 2, 2, 2, 1, 1,
-	2, 3, 3, 3, 3, 3, 3, 2,
-	5, 4, 4, 4, 4, 4, 4, 5,
-	6, 6, 5, 5, 5, 5, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6 },
-
-	{6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 6, 6, 6, 6, 6, 6,
-	6, 6, 5, 5, 5, 5, 6, 6,
-	5, 4, 4, 4, 4, 4, 4, 5,
-	2, 3, 3, 3, 3, 3, 3, 2,
-	1, 1, 2, 2, 2, 2, 1, 1,
-	1, 0, 0, 0, 0, 1, 0, 1}
-};
-
 const t_chess_value lone_king[64]{
 	123, 83, 43, 3, 3, 43, 83, 200,
 	83, -17, -27, -37, -37, -27, -17, 160,
@@ -362,6 +342,19 @@ const t_chess_value rook_behind_passed[2][2]{ // [Color][MG / EG]
 };
 
 // ----------------------------------------------------------//
+// Pawn Evaluation
+// ----------------------------------------------------------//
+const t_chess_value isolated_pawn[2][9]{
+	{0, -15, -30, -45, -60, -75, -90, -105, -120},
+	{ 0, -25, -50, -75, -100, -125, -150, -175, -200}
+};
+
+t_bitboard cannot_catch_pawn_mask[2][2][64];	// [color][to_move][king_square], so [WHITE][BLACK][E4] would return a mask of all squares where the white king on E4 cannot catch black pawns, when it is black to move!
+
+const t_bitboard candidate_outposts[2]{SQUARE64(C5) | SQUARE64(D5) | SQUARE64(E5) | SQUARE64(F5) | SQUARE64(C6) | SQUARE64(D6) | SQUARE64(E6) | SQUARE64(F6), SQUARE64(C3) | SQUARE64(D3) | SQUARE64(E3) | SQUARE64(F3) | SQUARE64(C4) | SQUARE64(D4) | SQUARE64(E4) | SQUARE64(F4)};
+const t_bitboard color_square_mask[2]{0x55AA55AA55AA55AA, 0xAA55AA55AA55AA55};
+
+// ----------------------------------------------------------//
 // Mobility
 // ----------------------------------------------------------//
 const t_chess_value horizontal_rook_mobility[2][8]{
@@ -404,7 +397,9 @@ t_bitboard pawn_wedge_mask[2][2];
 
 const t_chess_value pawn_storm[8] {0, -50, -48, -30, -10, 0, 0, 0};
 t_bitboard king_zone[64];
+
 const t_chess_value king_safety[8] {0, 0, 64, 96, 113, 120, 124, 128};
+
 
 // ----------------------------------------------------------//
 // Magics

@@ -104,6 +104,12 @@ extern const t_chess_color square_color[64];
 extern const t_chess_value passed_pawn_bonus[2][64];
 extern const t_chess_value rook_behind_passed[2][2];
 
+//-- Pawn evaluation
+extern const t_chess_value isolated_pawn[2][9];
+extern t_bitboard cannot_catch_pawn_mask[2][2][64];
+extern const t_bitboard candidate_outposts[2];
+extern const t_bitboard color_square_mask[2];
+
 //-- Mobility
 extern const t_chess_value horizontal_rook_mobility[2][8];
 extern const t_chess_value vertical_rook_mobility[2][8];
@@ -122,7 +128,6 @@ extern t_bitboard pawn_wedge_mask[2][2];
 extern const t_chess_value pawn_storm[8];
 extern t_bitboard king_zone[64];								// Square around the king which are used in the king safety evaluation
 extern const t_chess_value king_safety[8];
-extern const t_chess_value king_pressure_squares[2][64];
 
 // Magics
 extern t_bitboard rook_magic_moves[64][4096];

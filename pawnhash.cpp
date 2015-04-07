@@ -17,6 +17,11 @@
 #include "procs.h"
 #include "bittwiddle.h"
 
+#ifndef min
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_chess_eval *eval)
 {
     t_chess_color color;
@@ -84,30 +89,16 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
 		//-- Add the basic passed pawn bonus
 		b = pawn_record->passed[color];
 		while (b){
+
 			s = bitscan_reset(&b);
+			
 			bonus = passed_pawn_bonus[color][s];
-			middlegame += bonus;
+
+			middlegame += bonus / 2 ;
 			endgame += bonus;
 
 			//-- Connected passed pawn bonus
 			if (connected_pawn_mask[s] & pawn_record->passed[color]){
-
-				//** Tested 2013-09-14
-				// Base = /1, /1
-				// New1 = 3/2, 3/2
-				// New2 = 4/3, 4/3
-				// New3 = 3/4, 3/4
-				// New4 = /2, /2 (BEST! +25 ELO)
-				// So connected bonus must be less than the bonus for the passed pawn
-				// New1 = /3, /3
-				// New2 = /3, /2
-				// New3 = /4, /2 (BEST)
-				// New4 = /4, /3
-				// Try even more options
-				// New1 = /4, 2/3
-				// New2 = /5, /2
-				// New3 = /4, /2
-				// New4 = /5, 2/3
 				middlegame += bonus / 5;
 				endgame += (2 * bonus) / 3;
 			}
@@ -137,11 +128,11 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
         }
         pawn_record->isolated[color] = b;
         pawn_record->weak[color] |= b;
-    }
-    int count = popcount(pawn_record->isolated[WHITE]) - popcount(pawn_record->isolated[BLACK]);
 
-    middlegame += count * MG_ISOLATED_PAWN;
-    endgame += count * EG_ISOLATED_PAWN;
+		int count = popcount(b);
+		middlegame += isolated_pawn[MIDDLEGAME][count] * (1 - color * 2);
+		endgame += isolated_pawn[ENDGAME][count] * (1 - color * 2);
+    }
 
     // Backward
 
@@ -149,6 +140,12 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
 
     //- Piece Square values
     for (color = WHITE; color <= BLACK; color++) {
+
+		//-- King
+		middlegame += piece_square_table[PIECEINDEX(color, KING)][MIDDLEGAME][board->king_square[color]] * (1 - color * 2);
+		endgame += piece_square_table[PIECEINDEX(color, KING)][ENDGAME][board->king_square[color]] * (1 - color * 2);
+
+		//-- Pawns
         b = board->pieces[color][PAWN];
         while (b) {
             s = bitscan_reset(&b);
@@ -156,6 +153,10 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
             endgame += piece_square_table[PIECEINDEX(color, PAWN)][ENDGAME][s] * (1 - color * 2);
         }
     }
+
+	//-- Potential Outposts
+	for (color = WHITE; color <= BLACK; color++)
+		pawn_record->potential_outpost[color] = candidate_outposts[color] & pawn_record->attacks[color] & ~fwd_attacks[OPPONENT(color)];
 
 	//-- Open file
 	t_bitboard pawn_file[2];
@@ -178,6 +179,9 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
 
 	//-- Pawn Shield
 	eval_pawn_shelter(board, pawn_record);
+
+	//-- Calculate the score if it were a king & pawn endgame
+	evaluate_king_pawn_endgame(board, pawn_record);
 
     //-- Transfer key Bitboard to the Board structure
     for (color = WHITE; color <= BLACK; color++) {
@@ -228,6 +232,7 @@ void set_pawn_hash(unsigned int size)
             pawn_hash[i].isolated[c] = 0;
             pawn_hash[i].passed[c] = 0;
             pawn_hash[i].candidate_passed[c] = 0;
+			pawn_hash[i].potential_outpost[c] = 0;
             pawn_hash[i].double_pawns[c] = 0;
             pawn_hash[i].attacks[c] = 0;
             pawn_hash[i].weak[c] = 0;
@@ -240,7 +245,8 @@ void set_pawn_hash(unsigned int size)
 }
 
 t_hash calc_pawn_hash(struct t_board *board) {
-    t_hash zobrist = 0;
+   
+	t_hash zobrist = 0;
     t_chess_square s;
     t_chess_color color;
     t_bitboard b;
@@ -341,8 +347,92 @@ void eval_pawn_shelter(struct t_board *board, struct t_pawn_hash_record *pawn_re
 					pawn_record->king_pressure[color] += 50;
 				}
 			}
+
 		}
+
+		////-- Extra penalty for isolated square on the same side as the king
+		//if (BITBOARD_KINGSIDE & board->pieces[color][KING])
+		//	middlegame += popcount(pawn_record->isolated[color] & BITBOARD_KINGSIDE) * -15;
+
+		//else if (BITBOARD_QUEENSIDE & board->pieces[color][KING])
+		//	middlegame += popcount(pawn_record->isolated[color] & BITBOARD_QUEENSIDE) * -15;
 
 		pawn_record->middlegame += middlegame * (1 - 2 * color);
 	}
+}
+
+void evaluate_king_pawn_endgame(struct t_board *board, struct t_pawn_hash_record *pawn_record)
+{
+
+	t_chess_value score = 0;
+	t_chess_square s;
+
+	int unstoppable_rank[2] = { 0, 0 };
+
+	for (t_chess_color color = WHITE; color <= BLACK; color++) {
+
+		t_chess_color opponent = OPPONENT(color);
+		t_bitboard king_zone = king_mask[board->king_square[color]];
+
+		//-- Value of king
+		score += piece_square_table[PIECEINDEX(color, KING)][ENDGAME][board->king_square[color]] * (1 - color * 2);
+
+		//-- Calculate the different types of pawns
+		t_bitboard unstoppables = pawn_record->passed[color] & cannot_catch_pawn_mask[opponent][board->to_move][board->king_square[opponent]];
+		t_bitboard passed_pawns = pawn_record->passed[color] ^ unstoppables;
+		t_bitboard other_pawns = board->pieces[color][PAWN] ^ unstoppables ^ passed_pawns;
+		t_bitboard weak_pawns = pawn_record->weak[color] & other_pawns;
+
+		//-- Evaluate the unstoppables
+		while (unstoppables){
+			s = bitscan_reset(&unstoppables);
+
+			int rank = RANK(s);
+			if (color)
+				rank = 7 - rank;
+
+			unstoppable_rank[color] = max(unstoppable_rank[color], rank);
+			score += passed_pawn_bonus[color][s] + piece_square_table[PIECEINDEX(color, PAWN)][ENDGAME][s] * (1 - color * 2);
+		}
+
+		//-- ...which leaves the other passed pawns
+		while (passed_pawns){
+			s = bitscan_reset(&passed_pawns);
+
+			//-- Does the king protect the path to promotion?
+			if ((forward_squares[color][s] & king_zone) == forward_squares[color][s])
+			{
+				int rank = RANK(s);
+				if (color)
+					rank = 7 - rank;
+
+				unstoppable_rank[color] = max(unstoppable_rank[color], rank);
+				score += passed_pawn_bonus[color][s] + piece_square_table[PIECEINDEX(color, PAWN)][ENDGAME][s] * (1 - color * 2);
+			}
+			else
+				score += passed_pawn_bonus[color][s] + piece_square_table[PIECEINDEX(color, PAWN)][ENDGAME][s] * (1 - color * 2);
+		}
+
+		//-- Evaluate the rest of the pawns
+		while (other_pawns){
+			s = bitscan_reset(&other_pawns);
+			score += piece_square_table[PIECEINDEX(color, PAWN)][ENDGAME][s] * (1 - color * 2);
+		}
+
+		//-- Penalize weak pawns
+		score += popcount(weak_pawns) * -20 * (1 - color * 2);
+	}
+
+	//-- Race to promotion!
+	if (unstoppable_rank[WHITE] || unstoppable_rank[BLACK]){
+
+		//-- Does White Win?
+		if ((unstoppable_rank[WHITE] + (board->to_move == WHITE)) > (unstoppable_rank[BLACK] + (board->to_move == BLACK)))
+			score += (300 + 20 * unstoppable_rank[WHITE]);
+		else
+			score -= (300 + 20 * unstoppable_rank[BLACK]);
+	}
+
+	//-- Calculate the score from the perspective of the side to move
+	pawn_record->king_pawn_endgame_score = score * (1 - board->to_move * 2);
 }

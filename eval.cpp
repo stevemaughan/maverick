@@ -30,14 +30,21 @@ t_chess_value evaluate(struct t_board *board, struct t_chess_eval *eval) {
 	}
 	else
 		return calc_evaluation(board, eval);
+		
 }
 
 t_chess_value calc_evaluation(struct t_board *board, struct t_chess_eval *eval) {
 
-	t_chess_value score;
-
 	//-- Normal Position, so initialize the values
 	init_eval(eval);
+
+	//-- Is it a king & pawn endgame
+	if (board->pawn_hash == board->hash){
+		eval->static_score = calc_king_pawn_endgame(board, eval);
+		return eval->static_score;
+	}
+
+	t_chess_value score;
 
 	eval->king_zone[WHITE] = king_zone[board->king_square[WHITE]];
 	eval->king_zone[BLACK] = king_zone[board->king_square[BLACK]];
@@ -264,6 +271,24 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 
 		_not_occupied = ~board->occupied[color] & ~eval->attacks[opponent][PAWN];
 
+		//-- Outposts
+		t_bitboard knight_outpost = b & pawn_record->potential_outpost[color];
+		while (knight_outpost){
+
+			square = bitscan_reset(&knight_outpost);
+			t_chess_color square_color = SQUARECOLOR(square);
+
+			//-- Can it be taken by a minor piece?
+			if ((board->pieces[opponent][KNIGHT] == 0) && ((board->pieces[opponent][BISHOP] & color_square_mask[square_color]) == 0)){
+				middlegame += 25 - square_distance(square, board->king_square[opponent]);
+				endgame += 10;
+			}
+			else{
+				middlegame += 15 - square_distance(square, board->king_square[opponent]);
+				endgame += 8;
+			}
+		}
+
 		while (b){
 			//-- Find the square it resides
 			square = bitscan_reset(&b);
@@ -404,10 +429,10 @@ inline void calc_passed_pawns(struct t_board *board, struct t_chess_eval *eval) 
 
 inline void calc_king_safety(struct t_board *board, struct t_chess_eval *eval) 
 {
-	//eval->king_attack_pressure[WHITE] += king_pressure_squares[WHITE][board->king_square[WHITE]];
-	//eval->king_attack_pressure[BLACK] += king_pressure_squares[BLACK][board->king_square[BLACK]];
+	for (t_chess_color color = WHITE; color <= BLACK; color++)
+		eval->king_attack[color] = (eval->king_attack_pressure[OPPONENT(color)] * king_safety[eval->king_attack_count[OPPONENT(color)] & 7]) / 128;
 
-	eval->middlegame = eval->middlegame + (eval->king_attack_pressure[BLACK] * king_safety[eval->king_attack_count[BLACK] & 7]) / 128 - (eval->king_attack_pressure[WHITE] * king_safety[eval->king_attack_count[WHITE] & 7]) / 128;
+	eval->middlegame += eval->king_attack[WHITE] - eval->king_attack[BLACK];
 }
 
 void init_eval(struct t_chess_eval *eval) 
@@ -489,6 +514,105 @@ void init_eval_function() {
             }
         }
     }
+}
+
+t_chess_value calc_king_pawn_endgame(struct t_board *board, struct t_chess_eval *eval){
+
+	struct t_pawn_hash_record *pawn_record = lookup_pawn_hash(board, eval);
+
+	return pawn_record->king_pawn_endgame_score;
+}
+
+void known_endgame_KPvk(struct t_board *board, struct t_chess_eval *eval)
+{
+	if (board->piecelist[WHITEPAWN] == 0)
+		return;
+
+	t_chess_square opponents_king = board->king_square[BLACK];
+	t_chess_square own_king = board->king_square[WHITE];
+	t_chess_square s = bitscan(board->piecelist[WHITEPAWN]);
+
+	//-- Is the pawn obviously unstoppable?
+	if (board->piecelist[WHITEPAWN] & cannot_catch_pawn_mask[BLACK][board->to_move][opponents_king])
+		eval->static_score = 400 + 30 * RANK(s);
+
+	//-- Is it a king's rook pawn?
+	else if (COLUMN(s) == 7){
+
+		//-- Who is closer to h8
+		if (square_distance(H8, own_king) > (square_distance(H8, opponents_king) - (board->to_move == BLACK)))
+			eval->static_score = 0;
+		else
+			eval->static_score = 350 + 20 * RANK(s);
+	}
+
+	//-- Is it a queen's rook pawn?
+	else if (COLUMN(s) == 0){
+
+		//-- Who is closer to h8
+		if (square_distance(A8, own_king) > (square_distance(H8, opponents_king) - (board->to_move == BLACK)))
+			eval->static_score = 0;
+		else
+			eval->static_score = 350 + 20 * RANK(s);
+	}
+
+	//-- Can the pawn be taken by the opponent
+	else if (square_distance(s, own_king) < (square_distance(s, opponents_king) - (board->to_move == BLACK)))
+		eval->static_score = 10;
+
+	//-- Use normal heuristic of pawn advancing and proximity to king
+	else
+		eval->static_score = piece_square_table[WHITEKING][ENDGAME][own_king] - piece_square_table[BLACKKING][ENDGAME][opponents_king] + piece_square_table[WHITEPAWN][ENDGAME][s] + passed_pawn_bonus[WHITE][s] - 10 * square_distance(s, own_king) + 10 * square_distance(s, opponents_king);
+
+	//-- Adjust for size to move
+	eval->static_score *= (1 - board->to_move * 2);
+
+}
+
+void known_endgame_Kvkp(struct t_board *board, struct t_chess_eval *eval)
+{
+	if (board->piecelist[BLACKPAWN] == 0)
+		return;
+
+	t_chess_square opponents_king = board->king_square[WHITE];
+	t_chess_square own_king = board->king_square[BLACK];
+	t_chess_square s = bitscan(board->piecelist[BLACKPAWN]);
+
+	//-- Is the pawn obviously unstoppable?
+	if (board->piecelist[BLACKPAWN] & cannot_catch_pawn_mask[WHITE][board->to_move][opponents_king])
+		eval->static_score = -400 - 30 * (7 - RANK(s));
+
+	//-- Is it a king's rook pawn?
+	else if (COLUMN(s) == 7){
+
+		//-- Who is closer to H1
+		if (square_distance(H1, own_king) > (square_distance(H1, opponents_king) - (board->to_move == WHITE)))
+			eval->static_score = 0;
+		else
+			eval->static_score = -350 - 20 * (7 - RANK(s));
+	}
+
+	//-- Is it a queen's rook pawn?
+	else if (COLUMN(s) == 0){
+
+		//-- Who is closer to A1
+		if (square_distance(A1, own_king) > (square_distance(H1, opponents_king) - (board->to_move == WHITE)))
+			eval->static_score = 0;
+		else
+			eval->static_score = -350 - 20 * (7 - RANK(s));
+	}
+
+	//-- Can the pawn be taken by the opponent
+	else if (square_distance(s, own_king) < (square_distance(s, opponents_king) - (board->to_move == WHITE)))
+		eval->static_score = -10;
+
+	//-- Use normal heuristic of pawn advancing and proximity to king
+	else
+		eval->static_score = -piece_square_table[BLACKKING][ENDGAME][own_king] + piece_square_table[WHITEKING][ENDGAME][opponents_king] - piece_square_table[BLACKPAWN][ENDGAME][s] + passed_pawn_bonus[BLACK][s] + 10 * square_distance(s, own_king) - 10 * square_distance(s, opponents_king);
+
+	//-- Adjust for size to move
+	eval->static_score *= (1 - board->to_move * 2);
+
 }
 
 void known_endgame_QKvk(struct t_board *board, struct t_chess_eval *eval)
@@ -679,6 +803,30 @@ void known_endgame_KRvkb(struct t_board *board, struct t_chess_eval *eval)
 }
 
 void known_endgame_KBvkr(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = -12;
+	eval->static_score *= (1 - board->to_move * 2);
+}
+
+void known_endgame_KRBvkr(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = 12;
+	eval->static_score *= (1 - board->to_move * 2);
+}
+
+void known_endgame_KRvkrb(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = -12;
+	eval->static_score *= (1 - board->to_move * 2);
+}
+
+void known_endgame_KRNvkr(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = 12;
+	eval->static_score *= (1 - board->to_move * 2);
+}
+
+void known_endgame_KRvkrn(struct t_board *board, struct t_chess_eval *eval)
 {
 	eval->static_score = -12;
 	eval->static_score *= (1 - board->to_move * 2);

@@ -244,20 +244,20 @@ to_move_cut_test:
 
 BOOL see_square(struct t_board *board, t_chess_square to_square, t_chess_value threshold) {
 
-	t_chess_value see_value = see_piece_value[board->square[to_square]];
-	t_chess_value trophy_value = 0;
+	t_chess_value see_value = 0; 
+	t_chess_value trophy_value = see_piece_value[board->square[to_square]];;
 
-	//-- Is it an obvious winner e.g. PxQ
-	if (see_value - trophy_value >= threshold)
-		return TRUE;
+	////-- Is it an obvious winner e.g. PxQ
+	//if (see_value - trophy_value >= threshold)
+	//	return TRUE;
 
-	//-- Is it an obvious loser?
-	if (see_value < threshold)
-		return FALSE;
+	////-- Is it an obvious loser?
+	//if (see_value < threshold)
+	//	return FALSE;
 
 	t_bitboard attacks[2];
-	t_chess_color to_move = COLOR(board->square[to_square]);
-	t_chess_color opponent = OPPONENT(to_move);
+	t_chess_color opponent = COLOR(board->to_move);
+	t_chess_color to_move = OPPONENT(opponent);
 	t_chess_square s;
 	t_bitboard b;
 

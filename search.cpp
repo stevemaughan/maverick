@@ -16,6 +16,7 @@
 #include "procs.h"
 #include "bittwiddle.h"
 
+
 inline BOOL can_do_null_move(struct t_board *board, struct t_pv_data *pv, int ply, t_chess_value alpha, t_chess_value beta){
 
 	t_chess_color color = board->to_move;
@@ -26,14 +27,9 @@ inline BOOL can_do_null_move(struct t_board *board, struct t_pv_data *pv, int pl
 
 t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value alpha, t_chess_value beta) {
 
-	t_chess_value e;
-
     //-- Should we call qsearch?
-    if (depth <= 0 && !board->in_check) {
-        e = qsearch_plus(board, ply, depth, alpha, beta);
-		assert(e >= -CHECKMATE && e <= CHECKMATE);
-		return e;
-    }
+    if (depth <= 0 && !board->in_check)
+		return qsearch_plus(board, ply, depth, alpha, beta);
 
     //-- Increment the nodes
     nodes++;
@@ -70,12 +66,22 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 	}
 
 	//-- Declare local variables
-    struct t_pv_data *next_pv = &(board->pv_data[ply + 1]);
-    int reduction;
+	struct t_pv_data *next_pv = pv->next_pv;
+	struct t_pv_data *previous_pv = pv->previous_pv;
 
     t_chess_value					best_score = -CHECKMATE;
     t_chess_value					a = alpha;
     t_chess_value					b = beta;
+
+	//-- Determine what type of node it is
+	if (beta > alpha + 1)
+		pv->node_type = node_pv;
+	else if (previous_pv->node_type == node_pv)
+		pv->node_type = node_lite_all;
+	else if (previous_pv->node_type == node_cut)
+		pv->node_type = node_all;
+	else
+		pv->node_type = node_cut;
 
     //-- Probe Hash
 	struct t_move_record *hash_move = NULL;
@@ -83,6 +89,9 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 
 	//-- Has there been a match?
 	if (hash_record != NULL){
+
+		//-- Get the score from the hash table
+		t_chess_value hash_score = get_hash_score(hash_record, ply);
 
 		//-- Could it make a cut-off?
 		if (hash_record->depth >= depth){
@@ -116,10 +125,21 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 
 		//-- Store the hash move for further use!
 		hash_move = hash_record->move;
+
+		//-- Use the hash score to refine the node type
+		if (hash_record->bound != HASH_UPPER && hash_score >= beta)
+			pv->node_type = node_super_cut;
+
+		else if (hash_record->bound != HASH_LOWER && hash_score <= alpha)
+			pv->node_type = node_super_all;
+
+		else if (hash_record->bound == HASH_EXACT && pv->node_type == node_all)
+			pv->node_type = node_lite_all;
 	}
 
     //-- Null Move
     t_undo undo[1];
+	t_chess_value e;
 	if (can_do_null_move(board, pv, ply, alpha, beta)){
 
 		//-- Make the changes on the board
@@ -143,6 +163,10 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 			assert(e >= -CHECKMATE && e <= CHECKMATE);
 			return e;
 		}
+		
+		//-- Is there a Mate Threat on a super-reduced move - if so then exit?
+		if (e < MAX_CHECKMATE && pv->previous_pv->reduction > 2)
+			return alpha;
 	}
 
     //-- Internal Iterative Deepening!
@@ -189,12 +213,12 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 
 			//-- Is the opponent in check?
 			if (board->in_check)
-				reduction = 0;
+				pv->reduction = 0;
 			else
-				reduction = 1;
+				pv->reduction = 1;
 
 			//-- Simple version of alpha_beta for tips of search
-			e = -alphabeta_tip(board, ply + 1, depth - reduction, -beta, &fail_low);
+			e = -alphabeta_tip(board, ply + 1, depth - pv->reduction, -beta, &fail_low);
 
 			//-- Take the move back
 			unmake_move(board, undo);
@@ -217,8 +241,6 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 		moves->imove = moves->count;
 	}
 
-    //-- Order the moves
-
 	//-- Create the list of "bad" captures
 	struct t_move_list bad_moves[1];
 	bad_moves->count = 0;
@@ -227,6 +249,12 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 	//-- Reset the move count (must be after IID)
 	pv->legal_moves_played = 0;
 
+	//-- Variables used to calculate the reduction
+	BOOL in_check = board->in_check;
+	struct t_move_record *last_move = NULL;
+	if (ply > 1)
+		last_move = board->pv_data[ply - 2].current_move;
+			
     //-- Play moves
     while (!uci.stop && make_next_move(board, moves, bad_moves, undo)) {
 
@@ -237,18 +265,96 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
         //-- Evaluate the new board position
         evaluate(board, next_pv->eval);
 
-        //-- Calculate reduction
-        if (board->in_check)
-            reduction = 0;
-        else
-            reduction = 1;
+		//========================================//
+        // Calculate reduction
+		//========================================//
+		
+		//-- In Check?
+		if (board->in_check)
+			pv->reduction = 0;
+
+		//-- First Move?
+		else if (pv->legal_moves_played == 1)
+			pv->reduction = 1;
+
+		//-- Is this getting out of check?
+		else if (in_check)
+			pv->reduction = 1;
+
+		//-- Good Capture?
+		else if (pv->current_move->captured && moves->current_move_see_positive){
+
+			////-- Did it simply capture the opponents last piece that moved?
+			//if ((previous_pv->current_move != NULL) && (previous_pv->current_move->to_square == moves->current_move->to_square) && !(previous_pv->current_move->captured) && (previous_pv->legal_moves_played > 2))
+			//	pv->reduction = 4;
+
+			////-- No, it really is a good capture!
+			//else
+				pv->reduction = 1;
+		}
+		//-- Same piece moved as last time
+		//else if (ply > 1 && pv->previous_pv->previous_pv->current_move && pv->previous_pv->previous_pv->current_move->to_square == pv->current_move->from_square){
+		//	pv->reduction = 1;
+		//}
+
+		//-- Candidate for serious reductions
+		else{
+			
+			switch (pv->node_type)
+			{
+			case node_cut:
+				pv->reduction = 3;
+				break;
+
+			case node_super_cut:
+				pv->reduction = 4;
+				break;
+
+			case node_pv:
+				if (pv->legal_moves_played > 2)
+					pv->reduction = 2;
+				else
+					pv->reduction = 1;
+				break;
+
+			case node_lite_all:
+				if (pv->legal_moves_played > 2)
+					pv->reduction = 2;
+				else
+					pv->reduction = 1;
+				break;
+
+			case node_super_all:
+				pv->reduction = 3;
+				break;
+
+			case node_all:
+				if (pv->legal_moves_played > 4)
+					pv->reduction = 3;
+				else
+					pv->reduction = 2;
+				break;
+			}
+
+			//-- Reduce losing captures even more
+			if (pv->current_move->captured)
+				pv->reduction += 1;
+		}
 
         //-- Search the next ply at reduced depth
-        e = -alphabeta(board, ply + 1, depth - reduction, -b, -a);
+		e = -alphabeta(board, ply + 1, depth - pv->reduction, -b, -a);
+
+		//-- Fail high on a super-reduced move?
+		if (e > a && pv->reduction > 1){
+			pv->reduction = 1;
+
+			//-- Search again using the full width 
+			e = -alphabeta(board, ply + 1, depth - 1, -beta, -a);
+		}
 
         //-- Is a research required?
-		if (alpha + 1 != beta && e > a && a + 1 == b)
-            e = -alphabeta(board, ply + 1, depth - reduction, -beta, -a);
+		else if (alpha + 1 != beta && e > a && a + 1 == b)
+			e = -alphabeta(board, ply + 1, depth - pv->reduction, -beta, -a);
 
         unmake_move(board, undo);
 

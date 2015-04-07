@@ -88,6 +88,7 @@ char *get_fen(struct t_board *board);
 //--bitboard.c
 void init_bitboards();
 void init_magic();
+void init_unstoppable_pawn_mask();
 
 t_bitboard index_to_bitboard(t_bitboard mask, int index);
 t_bitboard create_rook_mask(t_chess_square s);
@@ -115,6 +116,7 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
 t_hash calc_pawn_hash(struct t_board *board);
 void eval_pawn_shelter(struct t_board *board, struct t_pawn_hash_record *pawn_record);
 void eval_pawn_storm(struct t_board *board, struct t_pawn_hash_record *pawn_record);
+void evaluate_king_pawn_endgame(struct t_board *board, struct t_pawn_hash_record *pawn_record);
 
 //-- Static Exchange Evaluation (see.cpp)
 BOOL see(struct t_board *board, struct t_move_record *move, t_chess_value threshold);
@@ -182,6 +184,7 @@ inline void calc_pawn_value(struct t_board *board, struct t_chess_eval *eval);
 inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval);
 inline void calc_passed_pawns(struct t_board *board, struct t_chess_eval *eval);
 inline void calc_king_safety(struct t_board *board, struct t_chess_eval *eval);
+t_chess_value calc_king_pawn_endgame(struct t_board *board, struct t_chess_eval *eval);
 inline BOOL known_ending(struct t_board *board, t_chess_value *score);
 void init_eval_function();
 void init_eval(struct t_chess_eval *eval);
@@ -208,6 +211,12 @@ void known_endgame_KRvkn(struct t_board *board, struct t_chess_eval *eval);
 void known_endgame_KNvkr(struct t_board *board, struct t_chess_eval *eval);
 void known_endgame_KRvkb(struct t_board *board, struct t_chess_eval *eval);
 void known_endgame_KBvkr(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KRBvkr(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KRvkrb(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KRNvkr(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KRvkrn(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KPvk(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_Kvkp(struct t_board *board, struct t_chess_eval *eval);
 
 //-- Material Hash Routines (materialhash.cpp)
 BOOL fill_material_hash();
@@ -226,6 +235,7 @@ void write_log(char *s, char *filename, BOOL append, BOOL send);
 void test_procedure();
 BOOL test_fen();
 BOOL test_bitscan();
+BOOL test_bittwiddles();
 BOOL test_genmove();
 BOOL test_make_unmake();
 BOOL test_perft();

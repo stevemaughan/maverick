@@ -9,12 +9,17 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
-//#include <intrin.h>
+#include <math.h>
 
 #include "defs.h"
 #include "data.h"
 #include "procs.h"
 #include "bittwiddle.h"
+
+#ifndef min
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
 
 t_bitboard index_to_bitboard(t_bitboard mask, int index)
 {
@@ -228,6 +233,46 @@ void init_bitboards()
     assert(xray[C2][E4] == (SQUARE64(F5) | SQUARE64(G6) | SQUARE64(H7)));
     assert(line[C2][F2] == (SQUARE64(C2) | SQUARE64(D2) | SQUARE64(E2) | SQUARE64(F2)));
     assert(line[D4][G1] == (SQUARE64(D4) | SQUARE64(E3) | SQUARE64(F2) | SQUARE64(G1)));
+
+	//-- Unstoppable Pawns
+	init_unstoppable_pawn_mask();
+
+}
+
+static inline int square_distance(int s1, int s2)
+{
+	int r = abs(RANK(s1) - RANK(s2));
+	int c = abs(COLUMN(s1) - COLUMN(s2));
+	if (r > c)
+		return r;
+	else
+		return c;
+};
+
+void init_unstoppable_pawn_mask()
+{
+
+	for (t_chess_color color = WHITE; color <= BLACK; color++){
+		for (t_chess_square king_square = A1; king_square <= H8; king_square++){
+
+			cannot_catch_pawn_mask[color][WHITE][king_square] = 0;
+			cannot_catch_pawn_mask[color][BLACK][king_square] = 0;
+
+			for (t_chess_square pawn_square = A1; pawn_square <= H8; pawn_square++){
+
+				t_chess_square promote_square = COLUMN(pawn_square) + A8 * color;
+
+				for (t_chess_color to_move = WHITE; to_move <= BLACK; to_move++){
+
+					if (min(5, square_distance(pawn_square, promote_square)) < (square_distance(king_square, promote_square) - (to_move == color)))
+						cannot_catch_pawn_mask[color][to_move][king_square] |= SQUARE64(pawn_square);
+				}				
+			}
+		}
+	}
+
+	//-- Test
+	assert(cannot_catch_pawn_mask[BLACK][BLACK][G5] == 18446470308215914496);
 }
 
 void init_magic()

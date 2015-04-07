@@ -454,6 +454,80 @@ BOOL fill_material_hash()
 	material_hash[index].key = key;
 	material_hash[index].eval_endgame = &known_endgame_insufficient_material;
 
+	//-- K + R + B vs. k + r
+	clear_array(material);
+	material[WHITEBISHOP] = 1;
+	material[WHITEROOK] = 1;
+	material[BLACKROOK] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KRBvkr;
+
+	//-- K + R + N vs. k + r
+	clear_array(material);
+	material[WHITEKNIGHT] = 1;
+	material[WHITEROOK] = 1;
+	material[BLACKROOK] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KRNvkr;
+
+	//-- K + R vs. k + r + b
+	clear_array(material);
+	material[WHITEROOK] = 1;
+	material[BLACKROOK] = 1;
+	material[BLACKBISHOP] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KRvkrb;
+
+	//-- K + R vs. k + r + n
+	clear_array(material);
+	material[WHITEROOK] = 1;
+	material[BLACKROOK] = 1;
+	material[BLACKKNIGHT] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KRvkrn;
+
+	//-- K + P vs. k
+	clear_array(material);
+	material[WHITEPAWN] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KPvk;
+
+	//-- K vs. k + p
+	clear_array(material);
+	material[BLACKPAWN] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_Kvkp;
+
 	return TRUE;
 
 }

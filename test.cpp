@@ -22,6 +22,7 @@ void test_procedure()
         init_engine(position);
 
     assert(test_bitscan());
+	assert(test_bittwiddles());
     assert(test_fen());
     assert(test_genmove());
     assert(test_make_unmake());
@@ -33,7 +34,7 @@ void test_procedure()
     assert(test_see());
     assert(test_position());
 	assert(test_hash_table());
-	test_ep_capture();
+	assert(test_ep_capture());
 	//assert(test_book());
     test_search();
 }
@@ -52,6 +53,18 @@ BOOL test_bitscan() {
         if (c != SQUARE64(i)) return FALSE;
     }
     return TRUE;
+}
+
+BOOL test_bittwiddles()
+{
+	BOOL ok = true;
+
+	ok &= SQUARECOLOR(A1) == BLACK;
+	ok &= SQUARECOLOR(H1) == WHITE;
+	ok &= SQUARECOLOR(A2) == WHITE;
+	ok &= SQUARECOLOR(E4) == WHITE;
+
+	return ok;
 }
 
 BOOL test_fen() {
@@ -549,6 +562,46 @@ BOOL test_eval() {
 	flip_board(position);
 	ok &= (v == evaluate(position, eval));		
 	
+	set_fen(position, "8/6pp/6p1/Pp6/1P6/1PK5/4P1k1/8 w - -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));	
+
+	set_fen(position, "8/2k5/1pP5/1P6/K7/8/8/8 w - -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));
+
+	set_fen(position, "5k2/8/8/7P/8/7K/8/8 b - -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));
+
+	set_fen(position, "6k1/8/7K/7P/8/8/8/8 b - -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));
+
+	set_fen(position, "8/6k1/8/3P4/1K6/8/8/8 b - -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));
+
+	set_fen(position, "2k5/2P1K3/1p6/1P6/8/8/8/8 b - -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));
+
+	set_fen(position, "r2r2k1/ppp4p/4p1p1/2B1Nb2/1PN2P2/3P2P1/P1P4P/5K2 w - -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));
+
+	set_fen(position, "1NQ5/k1p1p3/7p/pP2P1P1/2P5/2pq4/1n6/6K1 w - -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));
+
 	return ok;
 
 }
@@ -598,6 +651,16 @@ BOOL test_see() {
     set_fen(position, "Q7/p2k4/2pq4/3B4/8/8/6PP/n2Kb3 w - -");
     move = lookup_move(position, "a8c6");
     ok &= !see(position, move, 0);
+
+	////-- Test SEE on a square
+	//set_fen(position, "4k3/1ppn4/p5rr/1B3p2/2p1p3/1b3P2/PPP1P1BR/3K3R w - -");
+	//ok &= (see_square(position, H6, 0) == TRUE);
+	//ok &= (see_square(position, E4, 0) == TRUE);
+	//ok &= (see_square(position, A6, 0) == FALSE);
+	//ok &= (see_square(position, C4, 0) == FALSE);
+	//ok &= (see_square(position, B3, 0) == TRUE);
+	//ok &= (see_square(position, F5, 0) == FALSE);
+
 
     return ok;
 }

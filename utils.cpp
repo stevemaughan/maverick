@@ -17,17 +17,21 @@
 
 unsigned long time_now()
 {
-#if WIN32_CODE
+#if defined WIN32_CODE
 	return GetTickCount();
 #endif
 
 #if WIN64_CODE
+
+#if !MINGW64
 	return GetTickCount64();
 #endif
 
 #if MINGW64
 	return GetTickCount();
 #endif // MINGW64
+
+#endif
 }
 
 int index_of(char *substr, char *s)

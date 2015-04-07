@@ -9,27 +9,25 @@
 // Define Version
 //===========================================================//
 #define ENGINE_NAME							"Maverick"
-#define VERSION_NUMBER						"0.60"
+#define VERSION_NUMBER						"1.0"
 
 #if WIN32_CODE
 	#define ENGINE_VERSION					VERSION_NUMBER " x32"
 #endif
 
-#if WIN64_CODE && NOPOPCOUNT
-	#define ENGINE_VERSION					VERSION_NUMBER " x64 (No Popcount)"
-#endif
-
-#if WIN64_CODE && _DEBUG
-	#define ENGINE_VERSION					VERSION_NUMBER " x64 Debug"
-#endif
-
 #if WIN64_CODE
+
+#if NOPOPCOUNT
+	#define ENGINE_VERSION					VERSION_NUMBER " x64 NP"
+#elif _DEBUG
+	#define ENGINE_VERSION					VERSION_NUMBER " x64 Debug"
+#elif MINGW64
 	#define ENGINE_VERSION					VERSION_NUMBER " x64"
+#else
+	#define ENGINE_VERSION					VERSION_NUMBER " x64 Dev"
 #endif
 
-#if defined MINGW64
-	#define ENGINE_VERSION					VERSION_NUMBER " x64"
-#endif // defined
+#endif
 
 #define ENGINE_AUTHOR						"Steve Maughan"
 #include <cassert>
@@ -166,6 +164,7 @@ typedef enum enginestates {
 #define FLIP64(x)							((7 - RANK(x)) * 8 + COLUMN(x))
 #define FLIPPIECECOLOR(x)					PIECEINDEX(OPPONENT(COLOR(x)), PIECETYPE(x))
 #define PIECEMASK(x)						((t_piece_mask)1 << (x))
+#define SQUARECOLOR(x)						((x & 1) ^ (RANK(x) & 1) ^ 1)
 
 
 //===========================================================//
@@ -192,14 +191,14 @@ struct t_move_record
 
 struct t_move_list
 {
-    int										count;				// Number of moves (this doesn't change)
-    int										imove;				// This starts at "count" and is decremented as the moves are played
-	struct t_move_record					*current_move;		// The move last played
-	struct t_move_record					*hash_move;			// The hash move
-	t_bitboard								pinned_pieces;		// A bitboard which stores the position of pinned pieces
-    struct t_move_record					*move[256];			// The moves!
-    signed long long						value[256];			// Notional values for all of the moves
-	int										see[256];			// SEE score of moves
+    int										count;							// Number of moves (this doesn't change)
+    int										imove;							// This starts at "count" and is decremented as the moves are played
+	struct t_move_record					*current_move;					// The move last played
+	BOOL									current_move_see_positive;		// True if the current capture is NOT see negative
+	struct t_move_record					*hash_move;						// The hash move
+	t_bitboard								pinned_pieces;					// A bitboard which stores the position of pinned pieces
+    struct t_move_record					*move[256];						// The moves!
+    signed long long						value[256];						// Notional values for all of the moves
 };
 
 struct t_undo
@@ -242,6 +241,7 @@ struct t_chess_eval
 	t_bitboard								king_zone[2];
 	int										king_attack_count[2];
 	int										king_attack_pressure[2];
+	t_chess_value							king_attack[2];				// The pressure against the opponents king - so king_attack[WHITE] measures the pressure against the black king
 };
 
 //===========================================================//
@@ -270,11 +270,13 @@ struct t_pawn_hash_record
     t_hash									key;
     t_chess_value							middlegame;
     t_chess_value							endgame;
+	t_chess_value							king_pawn_endgame_score;
     t_bitboard								forward_squares[2];
     t_bitboard								backward_squares[2];
     t_bitboard								attacks[2];
     t_bitboard								passed[2];
     t_bitboard								candidate_passed[2];
+	t_bitboard								potential_outpost[2];
     t_bitboard								double_pawns[2];
     t_bitboard								backward[2];
     t_bitboard								isolated[2];
@@ -295,6 +297,16 @@ struct t_material_hash_record
 //===========================================================//
 // PV Data Structures
 //===========================================================//
+enum t_node_type
+{
+	node_cut,
+	node_super_cut,
+	node_pv,
+	node_lite_all,
+	node_super_all,
+	node_all
+};
+
 struct t_perft_pv_data
 {
     uchar									index;
@@ -306,16 +318,21 @@ struct t_perft_pv_data
 struct t_pv_data
 {
     struct t_chess_eval						eval[1];
-    struct t_move_record					*current_move;
+	int										reduction;
+	struct t_move_record					*current_move;
     struct t_move_record					*killer1;
     struct t_move_record					*killer2;
     struct t_move_record					*check_killer1;
     struct t_move_record					*check_killer2;
+	BOOL									in_check;
     int										legal_moves_played;
     int										best_line_length;
     struct t_move_record					*best_line[MAXPLY + 1];
 	struct t_pv_data						*previous_pv;
+	struct t_pv_data						*next_pv;
+	t_node_type								node_type;
 };
+
 
 //===========================================================//
 // Chess Board Structure
@@ -428,8 +445,8 @@ struct t_magic_structure
 #define MOVE_ORDER_KILLER2					(MAX_CHESS_INT >> 4)
 #define MOVE_ORDER_KILLER3					(MAX_CHESS_INT >> 7)
 #define MOVE_ORDER_KILLER4					(MAX_CHESS_INT >> 8)
-#define MOVE_ORDER_ETC						(MAX_CHESS_INT >> 6)
-#define MOVE_ORDER_REFUTATION				(MAX_CHESS_INT >> 5)
+#define MOVE_ORDER_ETC						(MAX_CHESS_INT >> 5)
+#define MOVE_ORDER_REFUTATION				(MAX_CHESS_INT >> 6)
 
 //===========================================================//
 // Multi-PV
