@@ -528,6 +528,110 @@ BOOL fill_material_hash()
 	material_hash[index].key = key;
 	material_hash[index].eval_endgame = &known_endgame_Kvkp;
 
+	//-- K + Q vs. k + q + b
+	clear_array(material);
+	material[WHITEQUEEN] = 1;
+	material[BLACKQUEEN] = 1;
+	material[BLACKBISHOP] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KQvkqb;
+
+	//-- K + Q vs. k + q + n
+	clear_array(material);
+	material[WHITEQUEEN] = 1;
+	material[BLACKQUEEN] = 1;
+	material[BLACKKNIGHT] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KQvkqn;
+
+	//-- K + Q + B vs. k + q
+	clear_array(material);
+	material[WHITEQUEEN] = 1;
+	material[WHITEBISHOP] = 1;
+	material[BLACKQUEEN] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KQBvkq;
+
+	//-- K + Q + N vs. k + q
+	clear_array(material);
+	material[WHITEQUEEN] = 1;
+	material[WHITEKNIGHT] = 1;
+	material[BLACKQUEEN] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KQNvkq;
+
+	//-- K + B + N vs. k + b
+	clear_array(material);
+	material[WHITEKNIGHT] = 1;
+	material[WHITEBISHOP] = 1;
+	material[BLACKBISHOP] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KBNvkb;
+
+	//-- K + B + N vs. k + n
+	clear_array(material);
+	material[WHITEKNIGHT] = 1;
+	material[WHITEBISHOP] = 1;
+	material[BLACKKNIGHT] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KBNvkn;
+
+	//-- K + B vs. k + b + n
+	clear_array(material);
+	material[WHITEBISHOP] = 1;
+	material[BLACKBISHOP] = 1;
+	material[BLACKKNIGHT] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KBvkbn;
+
+	//-- K + N vs. k + b + n
+	clear_array(material);
+	material[WHITEKNIGHT] = 1;
+	material[BLACKBISHOP] = 1;
+	material[BLACKKNIGHT] = 1;
+	key = get_material_hash(material);
+	index = key & material_hash_mask;
+	assert(material_hash[index].key != key);
+	if (material_hash[index].key != 0)
+		return FALSE;
+	material_hash[index].key = key;
+	material_hash[index].eval_endgame = &known_endgame_KNvkbn;
+
 	return TRUE;
 
 }

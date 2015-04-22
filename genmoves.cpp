@@ -185,7 +185,7 @@ void generate_moves(struct t_board *board, struct t_move_list *move_list) {
     //| Knight Moves                    |
     //+---------------------------------+
     piece = KNIGHT + piece_color;
-    source_piece = board->piecelist[piece];
+	source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;
     while (source_piece) {
         from_square = bitscan_reset(&source_piece);
         moves = (knight_mask[from_square] & not_occupied_to_move);
@@ -267,7 +267,7 @@ void generate_moves(struct t_board *board, struct t_move_list *move_list) {
 }
 
 //---------------------------------------------------------------------------------//
-// Generates "obvious" check - no castling, en-passant, discovered or promotions
+// Generates "obvious" checks - no castling, en-passant, discovered or promotions
 //---------------------------------------------------------------------------------//
 void generate_quiet_checks(struct t_board *board, struct t_move_list *move_list) {
 
@@ -340,7 +340,7 @@ void generate_quiet_checks(struct t_board *board, struct t_move_list *move_list)
     //+---------------------------------+
     t_bitboard knight_check_rays = knight_mask[board->king_square[opponent]] & ~_all_pieces;
     piece = KNIGHT + piece_color;
-    source_piece = board->piecelist[piece];
+    source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;
     while (source_piece) {
         from_square = bitscan_reset(&source_piece);
         moves = (knight_mask[from_square] & not_occupied_to_move) & knight_check_rays;
@@ -508,7 +508,7 @@ void generate_captures(struct t_board *board, struct t_move_list *move_list) {
     //| Knight Moves                    |
     //+---------------------------------+
     piece = KNIGHT + piece_color;
-    source_piece = board->piecelist[piece];
+	source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;
     while (source_piece) {
         from_square = bitscan_reset(&source_piece);
         moves = (knight_mask[from_square] & board->occupied[opponent]);
@@ -940,7 +940,7 @@ void generate_no_capture_no_checks(struct t_board *board, struct t_move_list *mo
     //| Knight Moves                    |
     //+---------------------------------+
     piece = KNIGHT + piece_color;
-    source_piece = board->piecelist[piece];
+	source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;;
     while (source_piece) {
         from_square = bitscan_reset(&source_piece);
         moves = (knight_mask[from_square] & ~_all_pieces & knight_check_rays);
@@ -1132,7 +1132,7 @@ void generate_quiet_moves(struct t_board *board, struct t_move_list *move_list) 
     //| Knight Moves                    |
     //+---------------------------------+
     piece = KNIGHT + piece_color;
-    source_piece = board->piecelist[piece];
+	source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;;
     while (source_piece) {
         from_square = bitscan_reset(&source_piece);
         moves = (knight_mask[from_square] & ~_all_pieces);

@@ -5,17 +5,89 @@
 //
 //===========================================================//
 
+
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
-#include <Windows.h>
+
+#if defined(_WIN32)
+#include <windows.h>
 #include <shlwapi.h>
+#else
+#include <unistd.h>
+#endif
+
 #include <iostream>
 
 #include "defs.h"
 #include "data.h"
 #include "procs.h"
+
+
+#if defined(__arm__) || defined(__linux__) 
+
+void close_book()
+{
+
+}
+
+void set_own_book(BOOL value)
+{
+
+}
+
+void set_opening_book(char *book)
+{
+
+
+}
+
+int book_count()
+{
+
+}
+
+char *book_string()
+{
+
+
+}
+
+unsigned long long read_integer(FILE *file, int size)
+{
+
+
+}
+
+void read_book_move(int index, struct t_book_move *book_move)
+{
+
+}
+
+struct t_move_record *decode_move(struct t_board *board, unsigned int move)
+{
+
+}
+
+t_move_record *probe_book(struct t_board *board)
+{
+
+
+}
+
+int book_move_count(struct t_board *board){
+
+
+}
+
+void fill_opening_move_list(struct t_board *board, struct t_move_list *move_list){
+
+
+}
+
+#else
 
 void close_book()
 {
@@ -421,3 +493,5 @@ void fill_opening_move_list(struct t_board *board, struct t_move_list *move_list
 	}while (move_list->count * 4 < moves->count * 3 && n < moves->count * 5);
 
 }
+
+#endif

@@ -47,9 +47,9 @@ t_nodes perft(struct t_board *board, int depth) {
     unsigned long finish = time_now();
 
     if (finish == start)
-        printf("Total Nodes: %I64d\n", total_nodes);
+        printf(INFO_STRING_PERFT_NODES, total_nodes);
     else
-        printf("Total Nodes: %I64d in %d milliseconds = nps %I64d\n", total_nodes, finish - start, 1000 * total_nodes / (finish - start));
+        printf(INFO_STRING_PERFT_SPEED, total_nodes, finish - start, 1000 * total_nodes / (finish - start));
 
     return total_nodes;
 }

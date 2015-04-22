@@ -7,21 +7,31 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+
+#if defined(_WIN32)
 #include <windows.h>
 #include <process.h>
 #include <conio.h>
+#else
+#include <unistd.h>
+#include <pthread.h>
+#endif
+
+
 #include <string.h>
 #include <math.h>
 #include <time.h>
 #include <assert.h>
+
+#if defined(_MSC_VER)
 #include <mmsystem.h>
+#pragma comment(lib, "winmm.lib")
+#endif
 
 #include "defs.h"
 #include "data.h"
 #include "procs.h"
 #include "bittwiddle.h"
-
-#pragma comment(lib, "winmm.lib")
 
 HANDLE thread_handle;
 unsigned threadID;
@@ -42,14 +52,21 @@ unsigned __stdcall engine_loop(void* pArguments)
             Sleep(1);
         }
     }
-    _endthreadex(0);
-    return 0;
+	#if defined(_WIN32)
+	_endthreadex(0);
+	#endif
+	return(0);
 }
 
 void create_uci_engine_thread()
 {
-    thread_handle = (HANDLE)_beginthreadex( NULL, 0, &engine_loop, NULL, 0, &threadID );
-    SetThreadPriority(thread_handle, THREAD_PRIORITY_NORMAL); // needed for Fritz GUI! :-))
+	#if defined(_WIN32)
+	thread_handle = (HANDLE)_beginthreadex(NULL, 0, &engine_loop, NULL, 0, &threadID);
+	SetThreadPriority(thread_handle, THREAD_PRIORITY_NORMAL);
+	#else
+	pthread_t SearchThread;
+	pthread_create(&SearchThread, NULL, engine_loop, &threadID);
+	#endif
 }
 
 void listen_for_uci_input()
@@ -128,7 +145,14 @@ void listen_for_uci_input()
 			uci_set_debug(input_string);
 		}
 
-        /*===============================================================*/
+		/*===============================================================*/
+		/* Run a Benchmark Search Against Test Positions
+		/*===============================================================*/
+		if ((index_of("bench", input_string) == 0) || (index_of("BENCH", input_string) == 0)) {
+			test_bench();
+		}
+		
+		/*===============================================================*/
         /* TEST Command
         /*===============================================================*/
         if (!strcmp(input_string, "test") || !strcmp(input_string, "TEST"))
@@ -299,7 +323,9 @@ void uci_check_status(struct t_board *board, int ply)
     t1 = time_now();
 	if ((!uci.level.ponder) && (!uci.level.infinite) && (!uci.level.depth) && (!uci.level.mate) && (!uci.level.nodes) && (t1 - search_start_time >= abort_move_time)){
 		static char s[1024];
-		sprintf(s, "Abort **NOW** : Abort Time = %d, Search Time = %d, Nodes = %I64d", abort_move_time, t1 - search_start_time, nodes + qnodes);
+		
+		sprintf(s, INFO_STRING_ABORT, abort_move_time, t1 - search_start_time, nodes + qnodes);
+
 		send_info(s);
 		uci.stop = TRUE;
 	}
@@ -391,17 +417,17 @@ void do_uci_new_pv(struct t_board *board, int score, int depth)
 
     t = time_now() - search_start_time;
 
-    if (score >= MAX_CHECKMATE) {
-        v = ((CHECKMATE - score + 1) >> 1);
-        sprintf(s, "info score mate %d time %ld depth %d seldepth %d nodes %I64d pv ", v, t, depth, deepest, nodes + qnodes);
-    }
-    else if (score <= -MAX_CHECKMATE) {
-        v = ((-score - CHECKMATE) >> 1);
-        sprintf(s, "info score mate %d time %ld depth %d seldepth %d nodes %I64d pv ", v, t, depth, deepest, nodes + qnodes);
-    }
-    else {
-        sprintf(s, "info score cp %d time %ld depth %d seldepth %d nodes %I64d pv ", score, t, depth, deepest, nodes + qnodes);
-    }
+	if (score >= MAX_CHECKMATE) {
+		v = ((CHECKMATE - score + 1) >> 1);
+		sprintf(s, INFO_STRING_CHECKMATE, v, t, depth, deepest, nodes + qnodes);
+	}
+	else if (score <= -MAX_CHECKMATE) {
+		v = ((-score - CHECKMATE) >> 1);
+		sprintf(s, INFO_STRING_CHECKMATE, v, t, depth, deepest, nodes + qnodes);
+	}
+	else {
+		sprintf(s, INFO_STRING_SCORE, score, t, depth, deepest, nodes + qnodes);
+	}
 
     pv[0] = 0;
     for (i = 0; i < board->pv_data[0].best_line_length; i++) {
@@ -431,17 +457,17 @@ void do_uci_fail_high(struct t_board *board, int score, int depth)
 
     t = time_now() - search_start_time;
 
-    if (score >= MAX_CHECKMATE){
-    	v = ((CHECKMATE - score + 1) >> 1);
-    	sprintf(s, "info score mate %d lowerbound time %ld depth %d seldepth %d nodes %I64d pv ", v, t, depth, deepest, nodes + qnodes);
-    }
-    else if (score <= -MAX_CHECKMATE){
-    	v = ((-score - CHECKMATE) >> 1);
-    	sprintf(s, "info score mate %d lowerbound time %ld depth %d seldepth %d nodes %I64d pv ", v, t, depth, deepest, nodes + qnodes);
-    }
-    else{
-    	sprintf(s, "info score cp %d lowerbound time %ld depth %d seldepth %d nodes %I64d pv ", score, t, depth, deepest, nodes + qnodes);
-    }
+	if (score >= MAX_CHECKMATE){
+		v = ((CHECKMATE - score + 1) >> 1);
+		sprintf(s, INFO_STRING_FAIL_HIGH_MATE, v, t, depth, deepest, nodes + qnodes);
+	}
+	else if (score <= -MAX_CHECKMATE){
+		v = ((-score - CHECKMATE) >> 1);
+		sprintf(s, INFO_STRING_FAIL_HIGH_MATE, v, t, depth, deepest, nodes + qnodes);
+	}
+	else{
+		sprintf(s, INFO_STRING_FAIL_HIGH_SCORE, score, t, depth, deepest, nodes + qnodes);
+	}
     strcpy(pv,move_as_str(board->pv_data[0].current_move));
     strcat(s,pv);
     send_command(s);
@@ -459,17 +485,17 @@ void do_uci_fail_low(struct t_board *board, int score, int depth)
 
     t = time_now() - search_start_time;
 
-    if (score >= MAX_CHECKMATE){
-    	v = ((CHECKMATE - score + 1) >> 1);
-    	sprintf(s, "info score mate %d upperbound time %ld depth %d seldepth %d nodes %I64d pv ", v, t, depth, deepest, nodes + qnodes);
-    }
-    else if (score <= -MAX_CHECKMATE){
-    	v = ((-score - CHECKMATE) >> 1);
-    	sprintf(s, "info score mate %d upperbound time %ld depth %d seldepth %d nodes %I64d pv ", v, t, depth, deepest, nodes + qnodes);
-    }
-    else{
-    	sprintf(s, "info score cp %d upperbound time %ld depth %d seldepth %d nodes %I64d pv ", score, t, depth, deepest, nodes + qnodes);
-    }
+	if (score >= MAX_CHECKMATE){
+		v = ((CHECKMATE - score + 1) >> 1);
+		sprintf(s, INFO_STRING_FAIL_LOW_MATE, v, t, depth, deepest, nodes + qnodes);
+	}
+	else if (score <= -MAX_CHECKMATE){
+		v = ((-score - CHECKMATE) >> 1);
+		sprintf(s, INFO_STRING_FAIL_LOW_MATE, v, t, depth, deepest, nodes + qnodes);
+	}
+	else{
+		sprintf(s, INFO_STRING_FAIL_LOW_SCORE, score, t, depth, deepest, nodes + qnodes);
+	}
     strcpy(pv,move_as_str(board->pv_data[0].current_move));
     strcat(s,pv);
     send_command(s);
@@ -484,10 +510,10 @@ void do_uci_send_nodes()
 
     n = nodes + qnodes;
     t = time_now();
-    if (t > search_start_time)
-        sprintf(s,"info nodes %I64d nps %I64d\n", n, 1000 * n / (t - search_start_time));
-    else
-        sprintf(s,"info nodes %I64d nps %I64d\n", n, (long long) 0);
+	if (t > search_start_time)
+		sprintf(s, INFO_STRING_SEND_NODES, n, 1000 * n / (t - search_start_time));
+	else
+		sprintf(s, INFO_STRING_SEND_NODES, n, (long long)0);
     send_command(s);
 }
 
@@ -507,7 +533,7 @@ void do_uci_hash_full()
 {
     static char s[64];
 
-    sprintf(s,"info hashfull %I64d\n", (1000 * hash_full) / (hash_mask + HASH_ATTEMPTS));
+	sprintf(s, INFO_STRING_SEND_HASH_FULL, (1000 * hash_full) / (hash_mask + HASH_ATTEMPTS));
     send_command(s);
 }
 
@@ -666,10 +692,6 @@ void set_uci_time_to_move(t_chess_color color)
 
 	//-- Early move time is when there is only one move
 	early_move_time = (t_chess_time) (target_move_time / 5);
-
-
-	sprintf(s, "info string Move = %d in Time = %d: Early = %d, Target = %d, Abort = %d", uci.level.movestogo, uci.level.time[color], early_move_time, target_move_time, abort_move_time);
-    send_command(s);
 }
 
 void set_uci_level(char *s, t_chess_color color)

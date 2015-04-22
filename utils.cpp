@@ -5,8 +5,12 @@
 //
 //===========================================================//
 
+#if defined(_WIN32)
 #include <windows.h>
-#include <Winbase.h>
+#else
+#include <unistd.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
@@ -17,21 +21,15 @@
 
 unsigned long time_now()
 {
-#if defined WIN32_CODE
+	#if defined(__arm__) || defined(__linux__) || defined(__MINGW32__)
 	return GetTickCount();
-#endif
 
-#if WIN64_CODE
-
-#if !MINGW64
+	#elif defined _WIN32 && !_WIN64
+	return GetTickCount();
+	
+	#else
 	return GetTickCount64();
-#endif
-
-#if MINGW64
-	return GetTickCount();
-#endif // MINGW64
-
-#endif
+	#endif
 }
 
 int index_of(char *substr, char *s)

@@ -217,6 +217,14 @@ void known_endgame_KRNvkr(struct t_board *board, struct t_chess_eval *eval);
 void known_endgame_KRvkrn(struct t_board *board, struct t_chess_eval *eval);
 void known_endgame_KPvk(struct t_board *board, struct t_chess_eval *eval);
 void known_endgame_Kvkp(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KQBvkq(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KQvkqb(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KQNvkq(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KQvkqn(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KBNvkb(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KBNvkn(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KBvkbn(struct t_board *board, struct t_chess_eval *eval);
+void known_endgame_KNvkbn(struct t_board *board, struct t_chess_eval *eval);
 
 //-- Material Hash Routines (materialhash.cpp)
 BOOL fill_material_hash();
@@ -251,6 +259,7 @@ BOOL test_book();
 BOOL test_hash_table();
 BOOL test_ep_capture();
 BOOL test_perft960();
+void test_bench();
 
 //--Perft
 t_nodes perft(struct t_board *board, int depth);

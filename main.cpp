@@ -9,19 +9,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#if defined(_WIN32)
 #include <process.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "defs.h"
 #include "data.h"
 #include "procs.h"
 #include "bittwiddle.h"
 
-
-
-//============================================================//
-// To Do...
-//
-// Counter Move for move ordering
 
 int main(int argc, char *argv[])
 {

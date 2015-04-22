@@ -55,4 +55,5 @@
 //-- Pawn Shield 
 #define MG_INTACT_PAWN_SHIELD			15
 #define MG_PAWN_SHIELD_WRECKED			-45
-#define MG_F6_PAWN_WEDGE				40
+#define MG_F6_PAWN_WEDGE				25
+#define MG_BACKWARD_PAWN				-5

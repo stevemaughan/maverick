@@ -7,18 +7,48 @@
 
 #include <intrin.h>
 
-#if defined WIN64_CODE
+#if (defined(_WIN32) && !defined(_WIN64)) || defined(__arm__) || defined(__linux__)
 
-#if defined MINGW64
-
-static inline t_chess_square bitscan(t_bitboard b) {
-    t_bitboard index;
-__asm__("bsfq %1, %0": "=r"(index): "rm"(b) );
-    return (t_chess_square)index;
+static inline t_chess_square bitscan(t_bitboard b)
+{
+	b ^= (b - 1);
+	unsigned int folded = (int)(b ^ (b >> 32));
+	return bitscan_table[folded * 0x78291ACF >> 26];
 }
 
-static inline void prefetch(struct t_move_record *move) {
-    __builtin_prefetch(move, 0, 3);
+static inline int popcount(t_bitboard b)
+{
+	int i = 0;
+	t_bitboard a = b;
+	while (a) {
+		i++;
+		a &= (a - 1);
+	}
+	return(i);
+}
+
+static inline t_chess_square bitscan_reset(t_bitboard *b)
+{
+	t_bitboard c = *b ^ (*b - 1);
+	*b &= (*b - 1);
+	unsigned int folded = (int)(c ^ (c >> 32));
+	return bitscan_table[folded * 0x78291ACF >> 26];
+}
+
+#elif defined(MINGW64)
+
+static inline t_chess_square bitscan(t_bitboard b) {
+	t_bitboard index;
+	__asm__("bsfq %1, %0": "=r"(index) : "rm"(b));
+	return (t_chess_square)index;
+}
+
+static inline t_chess_square bitscan_reset(t_bitboard *b)
+{
+	t_bitboard index;
+	__asm__("bsfq %1, %0": "=r"(index) : "rm"(*b));
+	*b &= (*b - 1);
+	return (t_chess_square)index;
 }
 
 #if defined NOPOPCOUNT
@@ -35,28 +65,12 @@ static inline int popcount(t_bitboard b)
 #else
 static inline int popcount(t_bitboard b)
 {
-    return __builtin_popcountll(b);
+	return __builtin_popcountll(b);
 }
 #endif
 
-static inline t_chess_square bitscan_reset(t_bitboard *b)
-{
-    //t_bitboard c = *b ^ (*b - 1);
-    //*b &= (*b - 1);
-    //unsigned int folded = (int) (c ^ (c >> 32));
-    //return bitscan_table[folded * 0x78291ACF >> 26];
-    //t_chess_square s = bitscan(*b);
-    //*b ^= SQUARE64(s);
-    //return s;
-    t_bitboard index;
-__asm__("bsfq %1, %0": "=r"(index): "rm"(*b) );
-    *b &= (*b - 1);
-    return (t_chess_square)index;
-}
+#else
 
-#endif
-
-#if !MINGW64
 static inline t_chess_square bitscan(t_bitboard b)
 {
 	unsigned long index;
@@ -99,38 +113,6 @@ static inline int popcount(t_bitboard b)
 #endif
 
 #endif
-
-#endif
-
-#if defined WIN32_CODE
-static inline t_chess_square bitscan(t_bitboard b)
-{
-	b ^= (b - 1);
-	unsigned int folded = (int) (b ^ (b >> 32));
-	return bitscan_table[folded * 0x78291ACF >> 26];
-}
-
-static inline int popcount(t_bitboard b)
-{
-	int i = 0;
-	t_bitboard a = b;
-	while (a) {
-		i++;
-		a &= (a - 1);
-	}
-	return(i);
-}
-
-static inline t_chess_square bitscan_reset(t_bitboard *b)
-{
-	t_bitboard c = *b ^ (*b - 1);
-	*b &= (*b - 1);
-	unsigned int folded = (int)(c ^ (c >> 32));
-	return bitscan_table[folded * 0x78291ACF >> 26];
-}
-
-#endif
-
 
 static inline BOOL is_bit_set(t_bitboard b, int i) {
     return ((SQUARE64(i) & b) != 0);

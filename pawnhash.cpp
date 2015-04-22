@@ -80,6 +80,13 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
 		b = (((p & B8H1) << 7) >> (16 * color)) | (((p & A8G1) << 9) >> (16 * color));
 		pawn_record->attacks[color] = b;
     }
+	
+	//-- Blocked
+	for (color = WHITE; color <= BLACK; color++) {
+		t_bitboard stops = (board->pieces[color][PAWN] << 8) >> (16 * color);
+		stops &= (board->piecelist[WHITEPAWN] | board->piecelist[BLACKPAWN]);
+		pawn_record->blocked[color] = (stops >> 8) << (16 * color);
+	}
 
     // passed
     for (color = WHITE; color <= BLACK; color++) {
@@ -105,18 +112,43 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
 		}
     }
 
+	// Backward
+	for (color = WHITE; color <= BLACK; color++) {
+
+		t_bitboard stops = (board->pieces[color][PAWN] << 8) >> (16 * color);
+
+		b = (stops & (pawn_record->attacks[OPPONENT(color)] | board->piecelist[WHITEPAWN] | board->piecelist[BLACKPAWN]) & ~fwd_attacks[color]);
+		b = (b >> 8) << (16 * color);
+		pawn_record->backward[color] = b;
+		pawn_record->weak[color] = b;
+
+		int penalty = popcount(b) * MG_BACKWARD_PAWN * (1 - color * 2);
+
+		middlegame += penalty;
+		endgame += penalty;
+	}
+
     // double (first type of weak pawns)
     for (color = WHITE; color <= BLACK; color++) {
 		b = (board->pieces[color][PAWN] & pawn_record->backward_squares[color]);
 		pawn_record->double_pawns[color] = b;
 		pawn_record->weak[color] = b;
 
-		while (b){
-			s = bitscan_reset(&b);
-			middlegame += double_pawn_penalty[MIDDLEGAME][COLUMN(s)] * (1 - 2 * color);
-			endgame += double_pawn_penalty[ENDGAME][COLUMN(s)] * (1 - 2 * color);
-		}
-    }
+		int penalty = -37 * popcount(b) * (1 - 2 * color);
+
+		middlegame += penalty;
+		endgame += penalty;
+
+		//-- Double and backward!!!!
+		b &= pawn_record->backward[color];
+		penalty = -10 * popcount(b) * (1 - 2 * color);
+
+		middlegame += penalty;
+		endgame += penalty;
+
+		//-- Calculate the double pawns on semi open files
+		pawn_record->semi_open_double_pawns[color] = popcount(b & ~pawn_record->forward_squares[OPPONENT(color)]);
+	}
 
     // Isolated Pawns
     for (color = WHITE; color <= BLACK; color++) {
@@ -133,10 +165,7 @@ struct t_pawn_hash_record *lookup_pawn_hash(struct t_board *board, struct t_ches
 		middlegame += isolated_pawn[MIDDLEGAME][count] * (1 - color * 2);
 		endgame += isolated_pawn[ENDGAME][count] * (1 - color * 2);
     }
-
-    // Backward
-
-    //--TO DO!!
+    
 
     //- Piece Square values
     for (color = WHITE; color <= BLACK; color++) {
@@ -234,6 +263,7 @@ void set_pawn_hash(unsigned int size)
             pawn_hash[i].candidate_passed[c] = 0;
 			pawn_hash[i].potential_outpost[c] = 0;
             pawn_hash[i].double_pawns[c] = 0;
+			pawn_hash[i].semi_open_double_pawns[c] = 0;
             pawn_hash[i].attacks[c] = 0;
             pawn_hash[i].weak[c] = 0;
 			pawn_hash[i].semi_open_file[c] = 0;

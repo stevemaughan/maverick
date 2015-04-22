@@ -9,7 +9,12 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
-#include <Windows.h>
+
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "defs.h"
 #include "data.h"

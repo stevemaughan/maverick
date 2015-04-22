@@ -7,9 +7,15 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+
+#if defined(_WIN32)
 #include <windows.h>
 #include <process.h>
 #include <conio.h>
+#else
+#include <unistd.h>
+#endif
+
 #include <string.h>
 #include <math.h>
 #include <assert.h>

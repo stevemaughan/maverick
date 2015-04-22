@@ -9,7 +9,12 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
-#include <Windows.h>
+
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "defs.h"
 #include "data.h"
@@ -387,8 +392,7 @@ BOOL test_perft() {
     else
         printf("**ERROR** with PERFT scores\n");
 
-    printf("Total Nodes: %I64d in %d milliseconds = nps %I64d\n", global_nodes, perft_end_time - perft_start_time, 1000 * global_nodes / (perft_end_time - perft_start_time));
-
+	printf(INFO_STRING_PERFT_SPEED, global_nodes, perft_end_time - perft_start_time, 1000 * global_nodes / (perft_end_time - perft_start_time));
     return ok;
 }
 
@@ -602,6 +606,16 @@ BOOL test_eval() {
 	flip_board(position);
 	ok &= (v == evaluate(position, eval));
 
+	set_fen(position, "r1b1k3/1pq2pp1/p3p3/4p1Q1/3N2p1/1NP3Pr/PPP3Pb/R1BR3K w q -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));
+
+	set_fen(position, "7k/6p1/K3p3/2P5/1P3r2/8/2R5/8 w - -");
+	v = evaluate(position, eval);
+	flip_board(position);
+	ok &= (v == evaluate(position, eval));
+
 	return ok;
 
 }
@@ -729,6 +743,70 @@ BOOL test_search()
 		Sleep(1);
 	
 	return TRUE;
+}
+
+void test_bench()
+{
+
+	uci_set_mode();
+	uci_isready();
+
+	set_hash(512);
+	set_own_book(FALSE);
+
+	uci_new_game(position);
+
+	global_nodes = 0;
+
+	t_chess_time start_time = time_now();
+
+	uci_position(position, "position fen 8/8/8/4k2K/1R3p2/8/6r1/8 w - -");
+	uci_go("go depth 20");
+
+	while (uci.engine_state != UCI_ENGINE_WAITING)
+		Sleep(1);
+	global_nodes += nodes + qnodes;
+
+	uci_position(position, "position fen 1rq5/p3kp2/2Bp1p2/1P2p1r1/QP3n2/2P5/5PPP/R4RK1 b - -");
+	uci_go("go depth 12");
+
+	while (uci.engine_state != UCI_ENGINE_WAITING)
+		Sleep(1);
+	global_nodes += nodes + qnodes;
+
+	uci_position(position, "position fen 1NQ5/k1p1p3/7p/pP2P1P1/2P5/2pq4/1n6/6K1 w - -");
+	uci_go("go depth 12");
+
+	while (uci.engine_state != UCI_ENGINE_WAITING)
+		Sleep(1);
+	global_nodes += nodes + qnodes;
+
+	uci_position(position, "position fen 2kr3r/pp1q1ppp/5n2/1Nb5/2Pp1B2/7Q/P4PPP/1R3RK1 w - -");
+	uci_go("go depth 16");
+
+	while (uci.engine_state != UCI_ENGINE_WAITING)
+		Sleep(1);
+	global_nodes += nodes + qnodes;
+
+	uci_position(position, "position fen 8/5p2/pk2p3/4P2p/2b1pP1P/P3P2B/8/7K w - -");
+	uci_go("go depth 24");
+
+	while (uci.engine_state != UCI_ENGINE_WAITING)
+		Sleep(1);
+	global_nodes += nodes + qnodes;
+
+	uci_position(position, "position fen 5rk1/2p4p/2p4r/3P4/4p1b1/1Q2NqPp/PP3P1K/R4R2 b - -");
+	uci_go("go depth 16");
+
+	while (uci.engine_state != UCI_ENGINE_WAITING)
+		Sleep(1);
+	global_nodes += nodes + qnodes;
+
+	t_chess_time end_time = time_now();
+
+	if (end_time > start_time)
+		printf(INFO_STRING_PERFT_SPEED, global_nodes, end_time - start_time, 1000 * global_nodes / (end_time - start_time));
+	
 }
 
 BOOL test_book()

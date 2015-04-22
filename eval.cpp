@@ -11,7 +11,12 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
-#include <Windows.h>
+
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "defs.h"
 #include "eval.h"
@@ -117,7 +122,6 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 
 		opponent = OPPONENT(color);
 
-
 		//=========================================================
 		//-- Rooks first
 		//=========================================================
@@ -144,6 +148,7 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 		if (b & pawn_record->semi_open_file[color]){
 			middlegame += pawn_record->pawn_count[color] * MG_ROOK_ON_SEMI_OPEN_FILE;
 		}
+
 
 		//-- Loop around for all pieces
 		while (b){
@@ -214,6 +219,38 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 			//-- piece-square tables
 			middlegame += piece_square_table[piece][MIDDLEGAME][square];
 			endgame += piece_square_table[piece][ENDGAME][square];
+		}
+
+		//-- Interaction of double pawns & major pieces
+		if (pawn_record->double_pawns[color]){
+
+			int double_pawn_count = popcount(pawn_record->double_pawns[color]);
+			int major_piece_count = popcount(board->pieces[color][ROOK] | board->pieces[color][QUEEN]);
+			
+			switch (major_piece_count){
+			case 0:
+				break;
+			case 1:
+				middlegame += (double_pawn_count * 12) - pawn_record->semi_open_double_pawns[color] * 30;
+				endgame += (double_pawn_count * 12) - pawn_record->semi_open_double_pawns[color] * 25;
+				break;
+			case 2:
+				middlegame += (double_pawn_count * 24) - pawn_record->semi_open_double_pawns[color] * 35;
+				endgame += (double_pawn_count * 24) - pawn_record->semi_open_double_pawns[color] * 30;
+				break;
+			case 3:
+				middlegame += (double_pawn_count * 30) - pawn_record->semi_open_double_pawns[color] * 40;
+				endgame += (double_pawn_count * 30) - pawn_record->semi_open_double_pawns[color] * 35;
+				break;
+			case 4:
+				middlegame += (double_pawn_count * 30) - pawn_record->semi_open_double_pawns[color] * 40;
+				endgame += (double_pawn_count * 30) - pawn_record->semi_open_double_pawns[color] * 35;
+				break;
+			case 5:
+				middlegame += (double_pawn_count * 30) - pawn_record->semi_open_double_pawns[color] * 40;
+				endgame += (double_pawn_count * 30) - pawn_record->semi_open_double_pawns[color] * 35;
+				break;
+			}
 		}
 
 		//=========================================================
@@ -300,25 +337,23 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 			moves = knight_mask[square];
 			eval->attacklist[piece] |= moves;
 
+			//-- Connected to another knight
+			if (moves & board->piecelist[piece]){
+				middlegame += MG_CONNECTED_KNIGHTS;
+				endgame += EG_CONNECTED_KNIGHTS;
+			}
+
 			//-- King safety
 			if (attack_squares = moves & eval->king_zone[opponent]){
 				eval->king_attack_count[opponent]++;
 				eval->king_attack_pressure[opponent] += 20 * popcount(attack_squares);
 			}
 
-			//-- Remove the square occupied by own pieces
+			//-- Mobility (not including any squares attacked by enemy pawns)
 			moves &= _not_occupied;
-
-			//-- Connected to another knight
-			if (knight_mask[square] & board->piecelist[piece]){
-				middlegame += MG_CONNECTED_KNIGHTS;
-				endgame += EG_CONNECTED_KNIGHTS;
-			}
-
-			//-- Trapped
-			//move_count = popcount(moves);
-			//middlegame -= trapped_knight[MIDDLEGAME][move_count];
-			//endgame -= trapped_knight[ENDGAME][move_count];
+			move_count = popcount(moves);
+			middlegame += knight_mobility[MIDDLEGAME][move_count];
+			endgame += knight_mobility[ENDGAME][move_count];
 
 			// piece-square tables
 			middlegame += piece_square_table[piece][MIDDLEGAME][square];
@@ -402,13 +437,14 @@ inline void calc_passed_pawns(struct t_board *board, struct t_chess_eval *eval) 
 					}
 
 					//-- Add King Tropism
-					int distance = square_distance(square, board->king_square[opponent]) - square_distance(square, board->king_square[color]);
-					if (distance > 1)
+					t_chess_square promotion_square = PROMOTION_SQUARE(color, square);
+					int distance = square_distance(promotion_square, board->king_square[opponent]) - square_distance(promotion_square, board->king_square[color]);
+					if (distance > (color != board->to_move))
 						// 2013-10-10: e += b / 5;
 						// 2015-03-09: e += b / 3; +1 ELO
 						// 2015-03-09: e += b / 4; -1 ELO
 						// 2015-03-09: e += b / 2; -8 ELO
-						endgame += (bonus / 5);
+						endgame += (bonus / 4);
 
 				}
 			}
@@ -832,3 +868,50 @@ void known_endgame_KRvkrn(struct t_board *board, struct t_chess_eval *eval)
 	eval->static_score *= (1 - board->to_move * 2);
 }
 
+void known_endgame_KQBvkq(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = 12;
+	eval->static_score *= (1 - board->to_move * 2);
+}
+
+void known_endgame_KQvkqb(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = -12;
+	eval->static_score *= (1 - board->to_move * 2);
+}
+
+void known_endgame_KQNvkq(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = 12;
+	eval->static_score *= (1 - board->to_move * 2);
+}
+
+void known_endgame_KQvkqn(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = -12;
+	eval->static_score *= (1 - board->to_move * 2);
+}
+
+void known_endgame_KBNvkb(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = 12;
+	eval->static_score *= (1 - board->to_move * 2);
+}
+
+void known_endgame_KBNvkn(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = 12;
+	eval->static_score *= (1 - board->to_move * 2);
+}
+
+void known_endgame_KBvkbn(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = -12;
+	eval->static_score *= (1 - board->to_move * 2);
+}
+
+void known_endgame_KNvkbn(struct t_board *board, struct t_chess_eval *eval)
+{
+	eval->static_score = -12;
+	eval->static_score *= (1 - board->to_move * 2);
+}

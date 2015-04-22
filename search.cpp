@@ -9,7 +9,12 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
-#include <Windows.h>
+
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "defs.h"
 #include "data.h"
@@ -137,6 +142,15 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 			pv->node_type = node_lite_all;
 	}
 
+	//-- Beta pruning
+	if (depth < 4 && pv->node_type != node_pv && beta < MAX_CHECKMATE && beta > -MAX_CHECKMATE && !board->in_check) {
+		
+		int pessimistic_score = pv->eval->static_score - depth * 50;
+
+		if (pessimistic_score >= beta)
+			return pessimistic_score;
+	}
+
     //-- Null Move
     t_undo undo[1];
 	t_chess_value e;
@@ -164,8 +178,8 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 			return e;
 		}
 		
-		//-- Is there a Mate Threat on a super-reduced move - if so then exit?
-		if (e < MAX_CHECKMATE && pv->previous_pv->reduction > 2)
+		//-- Is there a Mate Threat after a super-reduced move - if so then exit?
+		if (e < -MAX_CHECKMATE && pv->previous_pv->reduction > 2)
 			return alpha;
 	}
 

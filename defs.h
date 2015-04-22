@@ -1,8 +1,6 @@
 //===========================================================//
-//
 // Maverick Chess Engine
 // Copyright 2013-2015 Steve Maughan
-//
 //===========================================================//
 
 //===========================================================//
@@ -11,22 +9,18 @@
 #define ENGINE_NAME							"Maverick"
 #define VERSION_NUMBER						"1.0"
 
-#if WIN32_CODE
-	#define ENGINE_VERSION					VERSION_NUMBER " x32"
-#endif
-
-#if WIN64_CODE
-
-#if NOPOPCOUNT
-	#define ENGINE_VERSION					VERSION_NUMBER " x64 NP"
-#elif _DEBUG
-	#define ENGINE_VERSION					VERSION_NUMBER " x64 Debug"
-#elif MINGW64
-	#define ENGINE_VERSION					VERSION_NUMBER " x64"
-#else
-	#define ENGINE_VERSION					VERSION_NUMBER " x64 Dev"
-#endif
-
+#if defined(_WIN32) && !defined(_WIN64)
+#define ENGINE_VERSION					VERSION_NUMBER " x86"
+#elif defined(_WIN64) && defined(NOPOPCOUNT)
+#define ENGINE_VERSION					VERSION_NUMBER " x64 np"
+#elif defined(_WIN64) && defined(_DEBUG)
+#define ENGINE_VERSION					VERSION_NUMBER " x64 Debug"
+#elif defined(_WIN64)
+#define ENGINE_VERSION					VERSION_NUMBER " x64"
+#elif defined(__arm__)
+#define ENGINE_VERSION					VERSION_NUMBER
+#elif defined(__linux__)
+#define ENGINE_VERSION					VERSION_NUMBER
 #endif
 
 #define ENGINE_AUTHOR						"Steve Maughan"
@@ -119,7 +113,7 @@ typedef enum movetypes {
 #define GLOBAL_MOVE_COUNT					43764
 
 //===========================================================//
-// Bitboards
+// Types
 //===========================================================//
 typedef unsigned long long					t_bitboard;
 typedef long long unsigned int				t_hash;
@@ -165,6 +159,7 @@ typedef enum enginestates {
 #define FLIPPIECECOLOR(x)					PIECEINDEX(OPPONENT(COLOR(x)), PIECETYPE(x))
 #define PIECEMASK(x)						((t_piece_mask)1 << (x))
 #define SQUARECOLOR(x)						((x & 1) ^ (RANK(x) & 1) ^ 1)
+#define PROMOTION_SQUARE(color, square)		(56 * (1 - color) + COLUMN(square))
 
 
 //===========================================================//
@@ -286,6 +281,7 @@ struct t_pawn_hash_record
 	t_bitboard								semi_open_file[2];
 	t_chess_value							king_pressure[2];
 	int										pawn_count[2];
+	int										semi_open_double_pawns[2]; // number of double pawns on semi open files
 };
 
 struct t_material_hash_record
@@ -541,3 +537,25 @@ struct t_multi_pv {
 #define BITBOARDS_EDGE							0xff818181818181FF
 
 #define INDEX_CHECK(index, array)  assert((index) >= 0 &&  (index) < sizeof array / sizeof array[0]);
+
+//================================================================
+// UCI Information Strings
+//================================================================
+#if _WIN32
+#define NODE_FORMAT								"%I64d"
+#else
+#define NODE_FORMAT								"%llu"
+#endif
+
+#define INFO_STRING_ABORT						"Abort **NOW** : Abort Time = %d, Search Time = %d, Nodes = " NODE_FORMAT
+#define INFO_STRING_CHECKMATE					"info score mate %d time %ld depth %d seldepth %d nodes " NODE_FORMAT " pv "
+#define INFO_STRING_SCORE						"info score cp %d time %ld depth %d seldepth %d nodes " NODE_FORMAT " pv "
+#define INFO_STRING_FAIL_HIGH_MATE				"info score mate %d lowerbound time %ld depth %d seldepth %d nodes " NODE_FORMAT " pv "
+#define INFO_STRING_FAIL_HIGH_SCORE				"info score cp %d lowerbound time %ld depth %d seldepth %d nodes " NODE_FORMAT " pv "
+#define INFO_STRING_FAIL_LOW_MATE				"info score mate %d upperbound time %ld depth %d seldepth %d nodes " NODE_FORMAT " pv "
+#define INFO_STRING_FAIL_LOW_SCORE				"info score cp %d upperbound time %ld depth %d seldepth %d nodes " NODE_FORMAT " pv "
+#define INFO_STRING_SEND_NODES					"info nodes " NODE_FORMAT " nps " NODE_FORMAT "\n"
+#define INFO_STRING_SEND_HASH_FULL				"info hashfull " NODE_FORMAT "\n"
+#define INFO_STRING_PERFT_SPEED					"Total Nodes: " NODE_FORMAT " in %d milliseconds = nps " NODE_FORMAT "\n"
+#define INFO_STRING_PERFT_NODES					"Total Nodes: " NODE_FORMAT "\n"
+
