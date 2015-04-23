@@ -68,10 +68,10 @@ void generate_moves(struct t_board *board, struct t_move_list *move_list) {
     t_bitboard pinner, pinned;
     move_list->pinned_pieces = 0;
     //-- Bishops & Queens
-	assert(to_move >= 0 && to_move < 2);
-	assert(board->king_square[to_move] >= 0 && board->king_square[to_move] < 64);
-	assert(board->pieces[WHITE] == board->piecelist);
-	assert(board->pieces[BLACK] == board->piecelist + 8);
+    assert(to_move >= 0 && to_move < 2);
+    assert(board->king_square[to_move] >= 0 && board->king_square[to_move] < 64);
+    assert(board->pieces[WHITE] == board->piecelist);
+    assert(board->pieces[BLACK] == board->piecelist + 8);
     t_bitboard b = bishop_rays[board->king_square[to_move]] & (board->pieces[opponent][BISHOP] | board->pieces[opponent][QUEEN]);
     while (b) {
         pinner = bitscan_reset(&b);
@@ -94,23 +94,23 @@ void generate_moves(struct t_board *board, struct t_move_list *move_list) {
 
     if (board->castling && !board->in_check) {
 
-		//-- Kingside O-O
-		castle_index = (to_move * 2);
-		if ((board->castling >> castle_index) & (uchar)1) {
-			move = &xmove_list[castle_index];
-			if (!(_all_pieces & castle[castle_index].possible)) {
-				move_list->move[move_list->count++] = &xmove_list[castle_index];
-			}
-		}
-		//-- Queenside O-O-O
-		castle_index++;
-		if ((board->castling >> castle_index) & (uchar)1) {
-			move = &xmove_list[castle_index];
-			if (!(_all_pieces & castle[castle_index].possible)) {
-				move_list->move[move_list->count++] = &xmove_list[castle_index];
-			}
-		}
-	}
+        //-- Kingside O-O
+        castle_index = (to_move * 2);
+        if ((board->castling >> castle_index) & (uchar)1) {
+            move = &xmove_list[castle_index];
+            if (!(_all_pieces & castle[castle_index].possible)) {
+                move_list->move[move_list->count++] = &xmove_list[castle_index];
+            }
+        }
+        //-- Queenside O-O-O
+        castle_index++;
+        if ((board->castling >> castle_index) & (uchar)1) {
+            move = &xmove_list[castle_index];
+            if (!(_all_pieces & castle[castle_index].possible)) {
+                move_list->move[move_list->count++] = &xmove_list[castle_index];
+            }
+        }
+    }
 
     //+---------------------------------+
     //| Pawn Moves                      |
@@ -185,7 +185,7 @@ void generate_moves(struct t_board *board, struct t_move_list *move_list) {
     //| Knight Moves                    |
     //+---------------------------------+
     piece = KNIGHT + piece_color;
-	source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;
+    source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;
     while (source_piece) {
         from_square = bitscan_reset(&source_piece);
         moves = (knight_mask[from_square] & not_occupied_to_move);
@@ -508,7 +508,7 @@ void generate_captures(struct t_board *board, struct t_move_list *move_list) {
     //| Knight Moves                    |
     //+---------------------------------+
     piece = KNIGHT + piece_color;
-	source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;
+    source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;
     while (source_piece) {
         from_square = bitscan_reset(&source_piece);
         moves = (knight_mask[from_square] & board->occupied[opponent]);
@@ -862,22 +862,22 @@ void generate_no_capture_no_checks(struct t_board *board, struct t_move_list *mo
 
     if (board->castling && !board->in_check) {
 
-		//-- Kingside O-O
-		castle_index = (to_move * 2);
-		if ((board->castling >> castle_index) & (uchar)1) {
-			move = &xmove_list[castle_index];
-			if (!(_all_pieces & castle[castle_index].possible)) {
-				move_list->move[move_list->count++] = &xmove_list[castle_index];
-			}
-		}
-		//-- Queenside O-O-O
-		castle_index++;
-		if ((board->castling >> castle_index) & (uchar)1) {
-			move = &xmove_list[castle_index];
-			if (!(_all_pieces & castle[castle_index].possible)) {
-				move_list->move[move_list->count++] = &xmove_list[castle_index];
-			}
-		}
+        //-- Kingside O-O
+        castle_index = (to_move * 2);
+        if ((board->castling >> castle_index) & (uchar)1) {
+            move = &xmove_list[castle_index];
+            if (!(_all_pieces & castle[castle_index].possible)) {
+                move_list->move[move_list->count++] = &xmove_list[castle_index];
+            }
+        }
+        //-- Queenside O-O-O
+        castle_index++;
+        if ((board->castling >> castle_index) & (uchar)1) {
+            move = &xmove_list[castle_index];
+            if (!(_all_pieces & castle[castle_index].possible)) {
+                move_list->move[move_list->count++] = &xmove_list[castle_index];
+            }
+        }
     }
 
     //+---------------------------------+
@@ -940,7 +940,7 @@ void generate_no_capture_no_checks(struct t_board *board, struct t_move_list *mo
     //| Knight Moves                    |
     //+---------------------------------+
     piece = KNIGHT + piece_color;
-	source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;;
+    source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;;
     while (source_piece) {
         from_square = bitscan_reset(&source_piece);
         moves = (knight_mask[from_square] & ~_all_pieces & knight_check_rays);
@@ -1056,22 +1056,22 @@ void generate_quiet_moves(struct t_board *board, struct t_move_list *move_list) 
 
     if (board->castling && !board->in_check) {
 
-		//-- Kingside O-O
-		castle_index = (to_move * 2);
-		if ((board->castling >> castle_index) & (uchar)1) {
-			move = &xmove_list[castle_index];
-			if (!(_all_pieces & castle[castle_index].possible)) {
-				move_list->move[move_list->count++] = &xmove_list[castle_index];
-			}
-		}
-		//-- Queenside O-O-O
-		castle_index++;
-		if ((board->castling >> castle_index) & (uchar)1) {
-			move = &xmove_list[castle_index];
-			if (!(_all_pieces & castle[castle_index].possible)) {
-				move_list->move[move_list->count++] = &xmove_list[castle_index];
-			}
-		}
+        //-- Kingside O-O
+        castle_index = (to_move * 2);
+        if ((board->castling >> castle_index) & (uchar)1) {
+            move = &xmove_list[castle_index];
+            if (!(_all_pieces & castle[castle_index].possible)) {
+                move_list->move[move_list->count++] = &xmove_list[castle_index];
+            }
+        }
+        //-- Queenside O-O-O
+        castle_index++;
+        if ((board->castling >> castle_index) & (uchar)1) {
+            move = &xmove_list[castle_index];
+            if (!(_all_pieces & castle[castle_index].possible)) {
+                move_list->move[move_list->count++] = &xmove_list[castle_index];
+            }
+        }
     }
 
     //+---------------------------------+
@@ -1132,7 +1132,7 @@ void generate_quiet_moves(struct t_board *board, struct t_move_list *move_list) 
     //| Knight Moves                    |
     //+---------------------------------+
     piece = KNIGHT + piece_color;
-	source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;;
+    source_piece = board->piecelist[piece] & ~move_list->pinned_pieces;;
     while (source_piece) {
         from_square = bitscan_reset(&source_piece);
         moves = (knight_mask[from_square] & ~_all_pieces);
@@ -1225,7 +1225,7 @@ BOOL move_list_integrity(struct t_board *board, struct t_move_list *move_list) {
             write_move_list(moves, "move-list.txt");
             return FALSE;
         }
-		if (((board->square[move->to_square] != BLANK) && (board->square[move->to_square] != move->captured)) && !(board->chess960 && move->move_type == MOVE_CASTLE))
+        if (((board->square[move->to_square] != BLANK) && (board->square[move->to_square] != move->captured)) && !(board->chess960 && move->move_type == MOVE_CASTLE))
             return FALSE;
     }
     return TRUE;

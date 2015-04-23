@@ -37,25 +37,25 @@ BOOL repetition_draw(struct t_board *board)
 
 BOOL is_checkmate(struct t_board *board)
 {
-	if (!board->in_check)
-		return FALSE;
+    if (!board->in_check)
+        return FALSE;
 
-	struct t_move_list moves[1];
-	generate_evade_check(board, moves);
-	
-	if (moves->count > 0)
-		return FALSE;
+    struct t_move_list moves[1];
+    generate_evade_check(board, moves);
 
-	return TRUE;
+    if (moves->count > 0)
+        return FALSE;
+
+    return TRUE;
 }
 
 BOOL is_stalemate(struct t_board *board)
 {
-	struct t_move_list moves[1];
-	generate_legal_moves(board, moves);
+    struct t_move_list moves[1];
+    generate_legal_moves(board, moves);
 
-	if (moves->count > 0)
-		return FALSE;
+    if (moves->count > 0)
+        return FALSE;
 
-	return TRUE;
+    return TRUE;
 }

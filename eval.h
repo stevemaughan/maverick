@@ -52,7 +52,7 @@
 #define MG_ROOK_ON_OPEN_FILE			2
 #define MG_ROOK_ON_SEMI_OPEN_FILE		1
 
-//-- Pawn Shield 
+//-- Pawn Shield
 #define MG_INTACT_PAWN_SHIELD			15
 #define MG_PAWN_SHIELD_WRECKED			-45
 #define MG_F6_PAWN_WEDGE				25

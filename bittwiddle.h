@@ -11,103 +11,107 @@
 
 static inline t_chess_square bitscan(t_bitboard b)
 {
-	b ^= (b - 1);
-	unsigned int folded = (int)(b ^ (b >> 32));
-	return bitscan_table[folded * 0x78291ACF >> 26];
+    b ^= (b - 1);
+    unsigned int folded = (int)(b ^ (b >> 32));
+    return bitscan_table[folded * 0x78291ACF >> 26];
 }
 
 static inline int popcount(t_bitboard b)
 {
-	int i = 0;
-	t_bitboard a = b;
-	while (a) {
-		i++;
-		a &= (a - 1);
-	}
-	return(i);
+    int i = 0;
+    t_bitboard a = b;
+    while (a) {
+        i++;
+        a &= (a - 1);
+    }
+    return(i);
 }
 
 static inline t_chess_square bitscan_reset(t_bitboard *b)
 {
-	t_bitboard c = *b ^ (*b - 1);
-	*b &= (*b - 1);
-	unsigned int folded = (int)(c ^ (c >> 32));
-	return bitscan_table[folded * 0x78291ACF >> 26];
+    t_bitboard c = *b ^ (*b - 1);
+    *b &= (*b - 1);
+    unsigned int folded = (int)(c ^ (c >> 32));
+    return bitscan_table[folded * 0x78291ACF >> 26];
 }
 
 #elif defined(MINGW64)
 
 static inline t_chess_square bitscan(t_bitboard b) {
-	t_bitboard index;
-	__asm__("bsfq %1, %0": "=r"(index) : "rm"(b));
-	return (t_chess_square)index;
+    t_bitboard index;
+    __asm__("bsfq %1, %0": "=r"(index) : "rm"(b));
+    return (t_chess_square)index;
 }
 
 static inline t_chess_square bitscan_reset(t_bitboard *b)
 {
-	t_bitboard index;
-	__asm__("bsfq %1, %0": "=r"(index) : "rm"(*b));
-	*b &= (*b - 1);
-	return (t_chess_square)index;
+    t_bitboard index;
+    __asm__("bsfq %1, %0": "=r"(index) : "rm"(*b));
+    *b &= (*b - 1);
+    return (t_chess_square)index;
 }
 
-#if defined NOPOPCOUNT
+#if defined(NOPOPCOUNT)
 static inline int popcount(t_bitboard b)
 {
-	int i = 0;
-	t_bitboard a = b;
-	while (a) {
-		i++;
-		a &= (a - 1);
-	}
-	return(i);
+    int i = 0;
+    t_bitboard a = b;
+    while (a) {
+        i++;
+        a &= (a - 1);
+    }
+    return(i);
 }
 #else
 static inline int popcount(t_bitboard b)
 {
-	return __builtin_popcountll(b);
+    return __builtin_popcountll(b);
 }
 #endif
 
 #else
 
+#pragma intrinsic(_BitScanForward64)
+
 static inline t_chess_square bitscan(t_bitboard b)
 {
-	unsigned long index;
+    unsigned long index;
 
-	_BitScanForward64(&index, b);
+    _BitScanForward64(&index, b);
 
-	return index;
+    return index;
 }
 
 static inline t_chess_square bitscan_reset(t_bitboard *b)
 {
-	unsigned long index;
+    unsigned long index;
 
-	_BitScanForward64(&index, *b);
-	*b &= (*b - 1);
+    _BitScanForward64(&index, *b);
+    *b &= (*b - 1);
 
-	return index;
+    return index;
 }
 
 #if NOPOPCOUNT
 
 static inline int popcount(t_bitboard b)
 {
-	int i = 0;
-	t_bitboard a = b;
-	while (a) {
-		i++;
-		a &= (a - 1);
-	}
-	return(i);
+    int i = 0;
+    t_bitboard a = b;
+    while (a) {
+        i++;
+        a &= (a - 1);
+    }
+    return(i);
 }
 
 #else
 
+#pragma intrinsic(__popcnt64)
+
 static inline int popcount(t_bitboard b)
 {
-	return __popcnt64(b);
+    return __popcnt64(b);
 }
 
 #endif

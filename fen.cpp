@@ -34,7 +34,7 @@ void set_fen(struct t_board *board, char *epd)
 
     board->hash = 0;
     board->pawn_hash = 0;
-	board->material_hash = 0;
+    board->material_hash = 0;
 
     count = word_count(epd);
     if (count >= 0) strcpy(fen, word_index(0, epd));
@@ -152,61 +152,61 @@ void set_fen(struct t_board *board, char *epd)
     board->check_attacker = who_is_attacking_square(board, board->king_square[board->to_move], OPPONENT(board->to_move));
 
     //-- decide castling rights --//
-	board->castling_squares_changed = FALSE;
+    board->castling_squares_changed = FALSE;
 
     board->castling = 0;
     if (strlen(castle) > 0)
     {
 
-		// Is this a Chess960 game?
-		if (board->chess960){
+        // Is this a Chess960 game?
+        if (board->chess960) {
 
-			if (strchr(castle, 'K') != NULL) {
-				init_960_castling(board, board->king_square[WHITE], kingside_rook(board, WHITE));
-			}
-			if (strchr(castle, 'Q') != NULL) {
-				init_960_castling(board, board->king_square[WHITE], queenside_rook(board, WHITE));
-			}
-			if (strchr(castle, 'k') != NULL) {
-				init_960_castling(board, board->king_square[BLACK], kingside_rook(board, BLACK));
-			}
-			if (strchr(castle, 'q') != NULL) {
-				init_960_castling(board, board->king_square[BLACK], queenside_rook(board, BLACK));
-			}
-		}
+            if (strchr(castle, 'K') != NULL) {
+                init_960_castling(board, board->king_square[WHITE], kingside_rook(board, WHITE));
+            }
+            if (strchr(castle, 'Q') != NULL) {
+                init_960_castling(board, board->king_square[WHITE], queenside_rook(board, WHITE));
+            }
+            if (strchr(castle, 'k') != NULL) {
+                init_960_castling(board, board->king_square[BLACK], kingside_rook(board, BLACK));
+            }
+            if (strchr(castle, 'q') != NULL) {
+                init_960_castling(board, board->king_square[BLACK], queenside_rook(board, BLACK));
+            }
+        }
 
-		// It's probably a regular chess game
-		else{
-			if ((strchr(castle, 'K') != NULL) && (board->square[4] == WHITEKING) && (board->square[7] == WHITEROOK))
-				init_960_castling(board, E1, H1);
-			if ((strchr(castle, 'Q') != NULL) && (board->square[4] == WHITEKING) && (board->square[0] == WHITEROOK))
-				init_960_castling(board, E1, A1);
-			if ((strchr(castle, 'k') != NULL) && (board->square[60] == BLACKKING) && (board->square[63] == BLACKROOK))
-				init_960_castling(board, E8, H8);
-			if ((strchr(castle, 'q') != NULL) && (board->square[60] == BLACKKING) && (board->square[56] == BLACKROOK))
-				init_960_castling(board, E8, A8);
+        // It's probably a regular chess game
+        else {
+            if ((strchr(castle, 'K') != NULL) && (board->square[4] == WHITEKING) && (board->square[7] == WHITEROOK))
+                init_960_castling(board, E1, H1);
+            if ((strchr(castle, 'Q') != NULL) && (board->square[4] == WHITEKING) && (board->square[0] == WHITEROOK))
+                init_960_castling(board, E1, A1);
+            if ((strchr(castle, 'k') != NULL) && (board->square[60] == BLACKKING) && (board->square[63] == BLACKROOK))
+                init_960_castling(board, E8, H8);
+            if ((strchr(castle, 'q') != NULL) && (board->square[60] == BLACKKING) && (board->square[56] == BLACKROOK))
+                init_960_castling(board, E8, A8);
 
-			// ...but then again it's Chess960 if it has these characters in the castling rights
-			for (s = 'A'; s <= 'H'; s++)
-				if (strchr(castle, s) != NULL){
-					init_960_castling(board, board->king_square[WHITE], s - 'A');
-					board->chess960 = TRUE;
-					uci.options.chess960 = TRUE;
-				}
+            // ...but then again it's Chess960 if it has these characters in the castling rights
+            for (s = 'A'; s <= 'H'; s++)
+                if (strchr(castle, s) != NULL) {
+                    init_960_castling(board, board->king_square[WHITE], s - 'A');
+                    board->chess960 = TRUE;
+                    uci.options.chess960 = TRUE;
+                }
 
-			//  .. or these characters
-			for (s = 'a'; s <= 'h'; s++)
-				if (strchr(castle, s) != NULL){
-					init_960_castling(board, board->king_square[BLACK], A8 + s - 'a');
-					board->chess960 = TRUE;
-					uci.options.chess960 = TRUE;
-				}
-		}	
-	}
+            //  .. or these characters
+            for (s = 'a'; s <= 'h'; s++)
+                if (strchr(castle, s) != NULL) {
+                    init_960_castling(board, board->king_square[BLACK], A8 + s - 'a');
+                    board->chess960 = TRUE;
+                    uci.options.chess960 = TRUE;
+                }
+        }
+    }
 
-	//-- Recalculate changes to castling rights if necessary
-	if (board->castling_squares_changed)
-		init_directory_castling_delta();
+    //-- Recalculate changes to castling rights if necessary
+    if (board->castling_squares_changed)
+        init_directory_castling_delta();
 
     /* en-passant */
     board->ep_square = 0;
@@ -218,8 +218,8 @@ void set_fen(struct t_board *board, char *epd)
         else {
             i = ep[0] - 'a' + 16;
         }
-		assert(board->to_move >= 0 && board->to_move < 2);
-		assert(i >= 0 && i < 64);
+        assert(board->to_move >= 0 && board->to_move < 2);
+        assert(i >= 0 && i < 64);
         if (pawn_attackers[board->to_move][i] & board->pieces[board->to_move][PAWN]) {
             board->ep_square = SQUARE64(i);
             board->hash ^= ep_hash[COLUMN(i)];
@@ -228,13 +228,13 @@ void set_fen(struct t_board *board, char *epd)
 
     //--Hash
     board->hash ^= castle_hash[board->castling];
-	if (board->to_move == WHITE){
-		board->hash ^= white_to_move_hash;
-		board->pawn_hash ^= white_to_move_hash;
-	}
+    if (board->to_move == WHITE) {
+        board->hash ^= white_to_move_hash;
+        board->pawn_hash ^= white_to_move_hash;
+    }
 
     assert(board->hash == calc_board_hash(board));
-	assert(board->pawn_hash == calc_pawn_hash(board));
+    assert(board->pawn_hash == calc_pawn_hash(board));
 
     //// Reset draw variables
     board->fifty_move_count = 0;
@@ -329,44 +329,44 @@ char *get_fen(struct t_board *board)
     //-- Castling
     if (board->castling) {
 
-		if (board->chess960){
-			if (board->castling & WHITE_CASTLE_OO) {
-				s[i] = 'A' + castle[0].rook_from;
-				i++;
-			}
-			if (board->castling & WHITE_CASTLE_OOO) {
-				s[i] = 'A' + castle[1].rook_from;
-				i++;
-			}
-			if (board->castling & BLACK_CASTLE_OO) {
-				s[i] = 'a' + castle[2].rook_from;
-				i++;
-			}
-			if (board->castling & BLACK_CASTLE_OOO) {
-				s[i] = 'a' + castle[3].rook_from;
-				i++;
-			}
-		}
+        if (board->chess960) {
+            if (board->castling & WHITE_CASTLE_OO) {
+                s[i] = 'A' + castle[0].rook_from;
+                i++;
+            }
+            if (board->castling & WHITE_CASTLE_OOO) {
+                s[i] = 'A' + castle[1].rook_from;
+                i++;
+            }
+            if (board->castling & BLACK_CASTLE_OO) {
+                s[i] = 'a' + castle[2].rook_from;
+                i++;
+            }
+            if (board->castling & BLACK_CASTLE_OOO) {
+                s[i] = 'a' + castle[3].rook_from;
+                i++;
+            }
+        }
 
-		else{
+        else {
 
-			if (board->castling & WHITE_CASTLE_OO) {
-				s[i] = 'K';
-				i++;
-			}
-			if (board->castling & WHITE_CASTLE_OOO) {
-				s[i] = 'Q';
-				i++;
-			}
-			if (board->castling & BLACK_CASTLE_OO) {
-				s[i] = 'k';
-				i++;
-			}
-			if (board->castling & BLACK_CASTLE_OOO) {
-				s[i] = 'q';
-				i++;
-			}
-		}
+            if (board->castling & WHITE_CASTLE_OO) {
+                s[i] = 'K';
+                i++;
+            }
+            if (board->castling & WHITE_CASTLE_OOO) {
+                s[i] = 'Q';
+                i++;
+            }
+            if (board->castling & BLACK_CASTLE_OO) {
+                s[i] = 'k';
+                i++;
+            }
+            if (board->castling & BLACK_CASTLE_OOO) {
+                s[i] = 'q';
+                i++;
+            }
+        }
     }
     else {
         s[i] = '-';

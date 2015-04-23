@@ -38,7 +38,7 @@ t_nodes perft(struct t_board *board, int depth) {
             if (depth > 1)
                 move_nodes += do_perft(board, depth - 1);
             printf(move_as_str(move_list->move[i]));
-            printf(" = %u\n", move_nodes);
+            printf(" = %llu\n", move_nodes);
             unmake_move(board, undo);
             total_nodes += move_nodes;
         }
@@ -49,7 +49,7 @@ t_nodes perft(struct t_board *board, int depth) {
     if (finish == start)
         printf(INFO_STRING_PERFT_NODES, total_nodes);
     else
-        printf(INFO_STRING_PERFT_SPEED, total_nodes, finish - start, 1000 * total_nodes / (finish - start));
+        printf(INFO_STRING_PERFT_SPEED, (unsigned long long) total_nodes, (int) finish - start, 1000 * total_nodes / (finish - start));
 
     return total_nodes;
 }
@@ -57,9 +57,9 @@ t_nodes perft(struct t_board *board, int depth) {
 t_nodes do_perft(struct t_board *board, int depth)
 {
     struct t_move_list move_list[1];
-	struct t_move_list bad_move_list[1];
-	bad_move_list->count = 0;
-	bad_move_list->imove = 0;
+    struct t_move_list bad_move_list[1];
+    bad_move_list->count = 0;
+    bad_move_list->imove = 0;
     struct t_undo undo[1];
 
     t_nodes nodes = 0;
@@ -84,7 +84,7 @@ t_nodes do_perft(struct t_board *board, int depth)
     }
 
     for (i = move_list->count - 1; i >= 0; i--) {
-		assert(lookup_move(board, move_as_str(move_list->move[i])) == move_list->move[i]);
+        assert(lookup_move(board, move_as_str(move_list->move[i])) == move_list->move[i]);
         if (make_next_move(board, move_list, bad_move_list, undo)) {
             assert(integrity(board));
 

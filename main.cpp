@@ -29,12 +29,12 @@ int main(int argc, char *argv[])
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stdin, NULL, _IONBF, 0);
 
-	uci.engine_initialized = FALSE;
+    uci.engine_initialized = FALSE;
     uci.quit = FALSE;
-	uci.stop = FALSE;
+    uci.stop = FALSE;
 
     init_engine(position);
-	set_fen(position, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+    set_fen(position, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
 
     create_uci_engine_thread();
 
@@ -42,8 +42,8 @@ int main(int argc, char *argv[])
     listen_for_uci_input();
 
     destroy_pawn_hash();
-	destroy_material_hash();
-	destroy_hash();
+    destroy_material_hash();
+    destroy_hash();
 
     close_book();
 

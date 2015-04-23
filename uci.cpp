@@ -43,7 +43,7 @@ unsigned __stdcall engine_loop(void* pArguments)
     uci.engine_state = UCI_ENGINE_WAITING;
     uci.stop = FALSE;
     while (!uci.quit) {
-        if (uci.engine_state == UCI_ENGINE_START_THINKING){
+        if (uci.engine_state == UCI_ENGINE_START_THINKING) {
             root_search(position);
             uci.stop = FALSE;
             uci.engine_state = UCI_ENGINE_WAITING;
@@ -52,21 +52,21 @@ unsigned __stdcall engine_loop(void* pArguments)
             Sleep(1);
         }
     }
-	#if defined(_WIN32)
-	_endthreadex(0);
-	#endif
-	return(0);
+#if defined(_WIN32)
+    _endthreadex(0);
+#endif
+    return(0);
 }
 
 void create_uci_engine_thread()
 {
-	#if defined(_WIN32)
-	thread_handle = (HANDLE)_beginthreadex(NULL, 0, &engine_loop, NULL, 0, &threadID);
-	SetThreadPriority(thread_handle, THREAD_PRIORITY_NORMAL);
-	#else
-	pthread_t SearchThread;
-	pthread_create(&SearchThread, NULL, engine_loop, &threadID);
-	#endif
+#if defined(_WIN32)
+    thread_handle = (HANDLE)_beginthreadex(NULL, 0, &engine_loop, NULL, 0, &threadID);
+    SetThreadPriority(thread_handle, THREAD_PRIORITY_NORMAL); // needed for Fritz GUI! :-))
+#else
+    pthread_t SearchThread;
+    pthread_create(&SearchThread, NULL, engine_loop, &threadID);
+#endif
 }
 
 void listen_for_uci_input()
@@ -74,9 +74,9 @@ void listen_for_uci_input()
 
     char *p;
 
-	//-- Create a log file if in debug mode
-	if (uci.debug)
-		write_log("Maverick's Log File", "maverick-log.txt", TRUE, TRUE);
+    //-- Create a log file if in debug mode
+    if (uci.debug)
+        write_log("Maverick's Log File", "maverick-log.txt", TRUE, TRUE);
 
     // Ensure that listening thread has been started
     while (!uci.quit) {
@@ -86,11 +86,11 @@ void listen_for_uci_input()
         if ((p = strchr(input_string, '\n')) != NULL)
             *p = '\0';
 
-		//-- Create a log file if in debug mode
-		if (uci.debug)
-			write_log(input_string, "maverick-log.txt", TRUE, FALSE);
+        //-- Create a log file if in debug mode
+        if (uci.debug)
+            write_log(input_string, "maverick-log.txt", TRUE, FALSE);
 
-		/*===============================================================*/
+        /*===============================================================*/
         /* QUIT Command
         /*===============================================================*/
         if (!strcmp(input_string, "quit") || !strcmp(input_string, "QUIT")) {
@@ -127,12 +127,12 @@ void listen_for_uci_input()
         /*===============================================================*/
         if ((index_of("ponderhit", input_string)==0) || (index_of("PONDERHIT", input_string)==0))
             uci_ponderhit();
-		/*===============================================================*/
-		/* New Game
-		/*===============================================================*/
-		if ((index_of("ucinewgame", input_string) == 0) || (index_of("UCINEWGAME", input_string) == 0))
-			uci_new_game(position);
-		/*===============================================================*/
+        /*===============================================================*/
+        /* New Game
+        /*===============================================================*/
+        if ((index_of("ucinewgame", input_string) == 0) || (index_of("UCINEWGAME", input_string) == 0))
+            uci_new_game(position);
+        /*===============================================================*/
         /* Set Options Command
         /*===============================================================*/
         if ((index_of("setoption", input_string)==0) || (index_of("SETOPTION", input_string)==0)) {
@@ -146,22 +146,22 @@ void listen_for_uci_input()
 		}
 
 		/*===============================================================*/
-		/* Run a Benchmark Search Against Test Positions
+		/* Run a set of benchmark speed tests
 		/*===============================================================*/
 		if ((index_of("bench", input_string) == 0) || (index_of("BENCH", input_string) == 0)) {
 			test_bench();
 		}
-		
+
 		/*===============================================================*/
         /* TEST Command
         /*===============================================================*/
         if (!strcmp(input_string, "test") || !strcmp(input_string, "TEST"))
             test_procedure();
-		if (!strcmp(input_string, "testperft") || !strcmp(input_string, "TESTPERFT"))
-			test_perft();
-		if (!strcmp(input_string, "testperft960") || !strcmp(input_string, "TESTPERFT960"))
-			test_perft960();
-		if (!strcmp(input_string, "testbook") || !strcmp(input_string, "TESTBOOK"))
+        if (!strcmp(input_string, "testperft") || !strcmp(input_string, "TESTPERFT"))
+            test_perft();
+        if (!strcmp(input_string, "testperft960") || !strcmp(input_string, "TESTPERFT960"))
+            test_perft960();
+        if (!strcmp(input_string, "testbook") || !strcmp(input_string, "TESTBOOK"))
             test_book();
 
     }
@@ -178,8 +178,8 @@ void send_command(char *t)
             t[i-1] = '\0';
         puts(t);
         fflush(stdout);
-		if (uci.debug)
-			write_log(t, "maverick-log.txt", TRUE, TRUE);
+        if (uci.debug)
+            write_log(t, "maverick-log.txt", TRUE, TRUE);
 
     }
 }
@@ -222,22 +222,22 @@ void uci_set_mode()
         uci.opening_book.f = NULL;
     }
 
-	strcpy(s, "option name UCI_ShowCurrLine type check default false");
-	send_command(s);
-	uci.options.current_line = FALSE;
+    strcpy(s, "option name UCI_ShowCurrLine type check default false");
+    send_command(s);
+    uci.options.current_line = FALSE;
 
-	strcpy(s, "option name UCI_Chess960 type check default false");
-	send_command(s);
-	uci.options.chess960 = FALSE;
+    strcpy(s, "option name UCI_Chess960 type check default false");
+    send_command(s);
+    uci.options.chess960 = FALSE;
 
     sprintf(s, "option name UCI_EngineAbout type string default Maverick %s by Steve Maughan www.chessprogramming.net", ENGINE_VERSION);
     send_command(s);
 
-	strcpy(s, "option name Show Search Statistics type check default true");
-	uci.options.show_search_statistics = TRUE;
-	send_command(s);
+    strcpy(s, "option name Show Search Statistics type check default true");
+    uci.options.show_search_statistics = TRUE;
+    send_command(s);
 
-	strcpy(s, "uciok");
+    strcpy(s, "uciok");
     send_command(s);
 }
 
@@ -256,7 +256,7 @@ void uci_stop()
 {
     if (uci.engine_state != UCI_ENGINE_THINKING) {
         send_info("ERROR - I can't stop because I'm not thinking!");
-		uci_send_state("After Stop");
+        uci_send_state("After Stop");
     }
     uci.stop = TRUE;
     while (uci.engine_state != UCI_ENGINE_WAITING)
@@ -265,8 +265,8 @@ void uci_stop()
 
 void uci_go(char *s)
 {
-	while (uci.engine_state != UCI_ENGINE_WAITING)
-		Sleep(1);
+    while (uci.engine_state != UCI_ENGINE_WAITING)
+        Sleep(1);
 
     search_start_time = time_now();
     last_display_update = search_start_time;
@@ -278,10 +278,10 @@ void uci_go(char *s)
 
 void uci_position(struct t_board *board, char *s)
 {
-	while (uci.engine_state != UCI_ENGINE_WAITING)
-		Sleep(1);
+    while (uci.engine_state != UCI_ENGINE_WAITING)
+        Sleep(1);
 
-	static char str[UCI_BUFFER_SIZE];
+    static char str[UCI_BUFFER_SIZE];
     int i, n, c;
 
     if (!strcmp(word_index(1, s), "startpos") || !strcmp(word_index(1, s), "STARTPOS")) {
@@ -310,25 +310,25 @@ void uci_position(struct t_board *board, char *s)
 
 void uci_ponderhit()
 {
-	if (uci.level.ponder == FALSE){
-		send_info("ERROR - I'm not pondering!");
-		uci_send_state("After False PonderHit");
-	}
-	uci.level.ponder = FALSE;
+    if (uci.level.ponder == FALSE) {
+        send_info("ERROR - I'm not pondering!");
+        uci_send_state("After False PonderHit");
+    }
+    uci.level.ponder = FALSE;
 }
 
 void uci_check_status(struct t_board *board, int ply)
 {
     unsigned long t1;
     t1 = time_now();
-	if ((!uci.level.ponder) && (!uci.level.infinite) && (!uci.level.depth) && (!uci.level.mate) && (!uci.level.nodes) && (t1 - search_start_time >= abort_move_time)){
-		static char s[1024];
-		
-		sprintf(s, INFO_STRING_ABORT, abort_move_time, t1 - search_start_time, nodes + qnodes);
+    if ((!uci.level.ponder) && (!uci.level.infinite) && (!uci.level.depth) && (!uci.level.mate) && (!uci.level.nodes) && (t1 - search_start_time >= abort_move_time)) {
+        static char s[1024];
 
-		send_info(s);
-		uci.stop = TRUE;
-	}
+        sprintf(s, INFO_STRING_ABORT, abort_move_time, (long) t1 - search_start_time, nodes + qnodes);
+
+        send_info(s);
+        uci.stop = TRUE;
+    }
     else {
         message_update_count++;
         if (t1 - last_display_update > 1000) {
@@ -336,15 +336,15 @@ void uci_check_status(struct t_board *board, int ply)
             do_uci_hash_full();
             do_uci_send_nodes();
             if (uci.options.current_line)
-            	uci_current_line(board, ply);
+                uci_current_line(board, ply);
             last_display_update = t1;
-			if (message_update_count > 200){
-				message_update_mask = (message_update_mask << 1) + 1;
-			}
-			else {
-				if (message_update_count < 100)
-					message_update_mask = (message_update_mask >> 1);
-			}
+            if (message_update_count > 200) {
+                message_update_mask = (message_update_mask << 1) + 1;
+            }
+            else {
+                if (message_update_count < 100)
+                    message_update_mask = (message_update_mask >> 1);
+            }
             message_update_count = 0;
         }
     }
@@ -358,7 +358,7 @@ void uci_setoption(char *s)
 
     if ((index_of("Hash", s) == 2) || (index_of("hash", s) == 2) || (index_of("HASH", s) == 2)) {
         set_hash(number_index(4, s));
-		return;
+        return;
     }
 
     if ((index_of("OwnBook", s) == 2) || (index_of("ownbook", s) == 2) || (index_of("OWNBOOK", s) == 2)) {
@@ -366,36 +366,36 @@ void uci_setoption(char *s)
             set_own_book(TRUE);
         else
             set_own_book(FALSE);
-		return;
+        return;
     }
 
-	if (((index_of("Opening", s) == 2) || (index_of("opening", s) == 2) || (index_of("OPENING", s) == 2)) && ((index_of("Book", s) == 3) || (index_of("book", s) == 3) || (index_of("BOOK", s) == 3))) {
-		set_opening_book(leftstr(s, 5));
-		return;
+    if (((index_of("Opening", s) == 2) || (index_of("opening", s) == 2) || (index_of("OPENING", s) == 2)) && ((index_of("Book", s) == 3) || (index_of("book", s) == 3) || (index_of("BOOK", s) == 3))) {
+        set_opening_book(leftstr(s, 5));
+        return;
     }
 
-	if ((index_of("UCI_Chess960", s) == 2) || (index_of("UCI_CHESS960", s) == 2) || (index_of("uci_chess960", s) == 2) || (index_of("UCI_chess960", s) == 2)){
+    if ((index_of("UCI_Chess960", s) == 2) || (index_of("UCI_CHESS960", s) == 2) || (index_of("uci_chess960", s) == 2) || (index_of("UCI_chess960", s) == 2)) {
         if (!strcmp(word_index(4,s),"true") || !strcmp(word_index(4,s),"TRUE"))
-        	uci.options.chess960 = TRUE;
+            uci.options.chess960 = TRUE;
         else
-        	uci.options.chess960 = FALSE;
-		return;
+            uci.options.chess960 = FALSE;
+        return;
     }
 
-	if ((index_of("UCI_ShowCurrLine", s) == 2) || (index_of("UCI_SHOWCURRLINE", s) == 2) || (index_of("uci_showcurrline", s) == 2)){
-		if (!strcmp(word_index(4, s), "true") || !strcmp(word_index(4, s), "TRUE"))
-			uci.options.current_line = TRUE;
-		else
-			uci.options.current_line = FALSE;
-		return;
-	}
-
-	if((index_of("Statistics", s) == 4) || (index_of("statistics", s) == 4) || (index_of("STATISTICS", s) == 4)){
-        if (!strcmp(word_index(6, s), "true") || !strcmp(word_index(6, s), "TRUE"))
-        	uci.options.show_search_statistics = TRUE;
+    if ((index_of("UCI_ShowCurrLine", s) == 2) || (index_of("UCI_SHOWCURRLINE", s) == 2) || (index_of("uci_showcurrline", s) == 2)) {
+        if (!strcmp(word_index(4, s), "true") || !strcmp(word_index(4, s), "TRUE"))
+            uci.options.current_line = TRUE;
         else
-        	uci.options.show_search_statistics = FALSE;
-		return;
+            uci.options.current_line = FALSE;
+        return;
+    }
+
+    if((index_of("Statistics", s) == 4) || (index_of("statistics", s) == 4) || (index_of("STATISTICS", s) == 4)) {
+        if (!strcmp(word_index(6, s), "true") || !strcmp(word_index(6, s), "TRUE"))
+            uci.options.show_search_statistics = TRUE;
+        else
+            uci.options.show_search_statistics = FALSE;
+        return;
     }
 
 }
@@ -405,9 +405,9 @@ void uci_setoption(char *s)
 /*=======================================================*/
 void do_uci_new_pv(struct t_board *board, int score, int depth)
 {
-	//-- Don' waist bandwidth
-		if (depth < 2)
-			return;
+    //-- Don' waist bandwidth
+    if (depth < 2)
+        return;
 
     static char pv[2048];
     static char s[2048];
@@ -417,17 +417,17 @@ void do_uci_new_pv(struct t_board *board, int score, int depth)
 
     t = time_now() - search_start_time;
 
-	if (score >= MAX_CHECKMATE) {
-		v = ((CHECKMATE - score + 1) >> 1);
-		sprintf(s, INFO_STRING_CHECKMATE, v, t, depth, deepest, nodes + qnodes);
-	}
-	else if (score <= -MAX_CHECKMATE) {
-		v = ((-score - CHECKMATE) >> 1);
-		sprintf(s, INFO_STRING_CHECKMATE, v, t, depth, deepest, nodes + qnodes);
-	}
-	else {
-		sprintf(s, INFO_STRING_SCORE, score, t, depth, deepest, nodes + qnodes);
-	}
+    if (score >= MAX_CHECKMATE) {
+        v = ((CHECKMATE - score + 1) >> 1);
+		sprintf(s, INFO_STRING_CHECKMATE, v, (int) t, depth, deepest, nodes + qnodes);
+    }
+    else if (score <= -MAX_CHECKMATE) {
+        v = ((-score - CHECKMATE) >> 1);
+		sprintf(s, INFO_STRING_CHECKMATE, v, (int) t, depth, deepest, nodes + qnodes);
+    }
+    else {
+		sprintf(s, INFO_STRING_SCORE, score, (int) t, depth, deepest, nodes + qnodes);
+    }
 
     pv[0] = 0;
     for (i = 0; i < board->pv_data[0].best_line_length; i++) {
@@ -443,9 +443,9 @@ void do_uci_new_pv(struct t_board *board, int score, int depth)
 
 void do_uci_fail_high(struct t_board *board, int score, int depth)
 {
-	//-- Don' waist bandwidth
-	if (depth < 4)
-		return;
+    //-- Don' waist bandwidth
+    if (depth < 4)
+        return;
 
     static char pv[2048];
     static char s[2048];
@@ -453,21 +453,21 @@ void do_uci_fail_high(struct t_board *board, int score, int depth)
     int v;
     unsigned long t;
 
-	assert(score > -CHECKMATE && score < CHECKMATE);
+    assert(score > -CHECKMATE && score < CHECKMATE);
 
     t = time_now() - search_start_time;
 
-	if (score >= MAX_CHECKMATE){
-		v = ((CHECKMATE - score + 1) >> 1);
-		sprintf(s, INFO_STRING_FAIL_HIGH_MATE, v, t, depth, deepest, nodes + qnodes);
-	}
-	else if (score <= -MAX_CHECKMATE){
-		v = ((-score - CHECKMATE) >> 1);
-		sprintf(s, INFO_STRING_FAIL_HIGH_MATE, v, t, depth, deepest, nodes + qnodes);
-	}
-	else{
-		sprintf(s, INFO_STRING_FAIL_HIGH_SCORE, score, t, depth, deepest, nodes + qnodes);
-	}
+    if (score >= MAX_CHECKMATE) {
+        v = ((CHECKMATE - score + 1) >> 1);
+		sprintf(s, INFO_STRING_FAIL_HIGH_MATE, v, (int) t, depth, deepest, nodes + qnodes);
+    }
+    else if (score <= -MAX_CHECKMATE) {
+        v = ((-score - CHECKMATE) >> 1);
+		sprintf(s, INFO_STRING_FAIL_HIGH_MATE, v, (int) t, depth, deepest, nodes + qnodes);
+    }
+    else {
+		sprintf(s, INFO_STRING_FAIL_HIGH_SCORE, score, (int) t, depth, deepest, nodes + qnodes);
+    }
     strcpy(pv,move_as_str(board->pv_data[0].current_move));
     strcat(s,pv);
     send_command(s);
@@ -485,17 +485,17 @@ void do_uci_fail_low(struct t_board *board, int score, int depth)
 
     t = time_now() - search_start_time;
 
-	if (score >= MAX_CHECKMATE){
-		v = ((CHECKMATE - score + 1) >> 1);
-		sprintf(s, INFO_STRING_FAIL_LOW_MATE, v, t, depth, deepest, nodes + qnodes);
-	}
-	else if (score <= -MAX_CHECKMATE){
-		v = ((-score - CHECKMATE) >> 1);
-		sprintf(s, INFO_STRING_FAIL_LOW_MATE, v, t, depth, deepest, nodes + qnodes);
-	}
-	else{
-		sprintf(s, INFO_STRING_FAIL_LOW_SCORE, score, t, depth, deepest, nodes + qnodes);
-	}
+    if (score >= MAX_CHECKMATE) {
+        v = ((CHECKMATE - score + 1) >> 1);
+		sprintf(s, INFO_STRING_FAIL_LOW_MATE, v, (int) t, depth, deepest, nodes + qnodes);
+    }
+    else if (score <= -MAX_CHECKMATE) {
+        v = ((-score - CHECKMATE) >> 1);
+        sprintf(s, INFO_STRING_FAIL_LOW_MATE, v, (int) t, depth, deepest, nodes + qnodes);
+    }
+    else {
+        sprintf(s, INFO_STRING_FAIL_LOW_SCORE, score, (int) t, depth, deepest, nodes + qnodes);
+    }
     strcpy(pv,move_as_str(board->pv_data[0].current_move));
     strcat(s,pv);
     send_command(s);
@@ -510,10 +510,10 @@ void do_uci_send_nodes()
 
     n = nodes + qnodes;
     t = time_now();
-	if (t > search_start_time)
-		sprintf(s, INFO_STRING_SEND_NODES, n, 1000 * n / (t - search_start_time));
-	else
-		sprintf(s, INFO_STRING_SEND_NODES, n, (long long)0);
+    if (t > search_start_time)
+        sprintf(s, INFO_STRING_SEND_NODES, n, 1000 * n / (t - search_start_time));
+    else
+        sprintf(s, INFO_STRING_SEND_NODES, n, (unsigned long long)0);
     send_command(s);
 }
 
@@ -533,7 +533,7 @@ void do_uci_hash_full()
 {
     static char s[64];
 
-	sprintf(s, INFO_STRING_SEND_HASH_FULL, (1000 * hash_full) / (hash_mask + HASH_ATTEMPTS));
+    sprintf(s, INFO_STRING_SEND_HASH_FULL, (1000 * hash_full) / (hash_mask + HASH_ATTEMPTS));
     send_command(s);
 }
 
@@ -564,9 +564,9 @@ void uci_current_line(struct t_board *board, int ply)
     int i;
 
     strcpy(s, "info currline");
-    for(i = 0; i < ply; i++){
-    	strcat(s, " ");
-    	strcat(s, move_as_str(board->pv_data[i].current_move));
+    for(i = 0; i < ply; i++) {
+        strcat(s, " ");
+        strcat(s, move_as_str(board->pv_data[i].current_move));
     }
     send_command(s);
 }
@@ -622,7 +622,7 @@ BOOL is_search_complete(struct t_board *board, int score, int ply, struct t_move
     };
 
     /* Normal Move */
-	if (target_move_time < (t1 - search_start_time) * 1.5 || abort_move_time < (t1 - search_start_time) * 2.0)
+    if (target_move_time < (t1 - search_start_time) * 1.5 || abort_move_time < (t1 - search_start_time) * 2.0)
         return TRUE;
 
     return FALSE;
@@ -632,8 +632,8 @@ void set_uci_time_to_move(t_chess_color color)
 {
 
     static char s[2048];
-	long lag = 0;
-	t_chess_color opponent = OPPONENT(color);
+    long lag = 0;
+    t_chess_color opponent = OPPONENT(color);
 
     /* Infinity */
     if (uci.level.infinite || uci.level.mate || uci.level.nodes) {
@@ -651,54 +651,54 @@ void set_uci_time_to_move(t_chess_color color)
         return;
     }
 
-	int x_togo;
+    int x_togo;
 
     /* Set time for x number of moves */
     if (uci.level.movestogo > 0) {
-		x_togo = uci.level.movestogo;
+        x_togo = uci.level.movestogo;
         target_move_time = (uci.level.time[color] - lag * x_togo) / (x_togo + 1);
-		if (target_move_time < lag)
-			target_move_time = lag;
+        if (target_move_time < lag)
+            target_move_time = lag;
 
-		//-- Modified Logistic Formula
-		double delta = 3;
-		double half = 10;
-		double a = (log((double) delta - (double) 1) - log((double) 1)) / (half - (double) 1);
-		double b = -half * a - log((double) 1);
-		double m = delta / (1 + exp(-((double) x_togo * a + b)));
-		abort_move_time = int(target_move_time * m);
+        //-- Modified Logistic Formula
+        double delta = 3;
+        double half = 10;
+        double a = (log((double) delta - (double) 1) - log((double) 1)) / (half - (double) 1);
+        double b = -half * a - log((double) 1);
+        double m = delta / (1 + exp(-((double) x_togo * a + b)));
+        abort_move_time = int(target_move_time * m);
 
-	}
-	else{
-		/* Game in x + inc */
-		if (uci.level.movestogo == 0)
-			x_togo = (35 - 5 * uci.level.ponder);
-		else
-			x_togo = 35;
-		target_move_time = uci.level.tinc[color] + (uci.level.time[color] - uci.level.tinc[color] - lag * x_togo) / x_togo;
-		if (target_move_time < lag)
-			target_move_time = lag;
+    }
+    else {
+        /* Game in x + inc */
+        if (uci.level.movestogo == 0)
+            x_togo = (35 - 5 * uci.level.ponder);
+        else
+            x_togo = 35;
+        target_move_time = uci.level.tinc[color] + (uci.level.time[color] - uci.level.tinc[color] - lag * x_togo) / x_togo;
+        if (target_move_time < lag)
+            target_move_time = lag;
 
-		//-- Find a suitable abort time
-		abort_move_time = target_move_time + (uci.level.time[color] - uci.level.tinc[color]) / 10;
-		if (abort_move_time < lag)
-			abort_move_time = lag;
-	}
+        //-- Find a suitable abort time
+        abort_move_time = target_move_time + (uci.level.time[color] - uci.level.tinc[color]) / 10;
+        if (abort_move_time < lag)
+            abort_move_time = lag;
+    }
 
 
-	//-- Check to make sure this makes sense
-	if (uci.level.time[color] - abort_move_time < 100)
-		abort_move_time = target_move_time;
+    //-- Check to make sure this makes sense
+    if (uci.level.time[color] - abort_move_time < 100)
+        abort_move_time = target_move_time;
 
-	//-- Early move time is when there is only one move
-	early_move_time = (t_chess_time) (target_move_time / 5);
+    //-- Early move time is when there is only one move
+    early_move_time = (t_chess_time) (target_move_time / 5);
 }
 
 void set_uci_level(char *s, t_chess_color color)
 {
     int i;
     double d;
-	t_chess_color opponent = OPPONENT(color);
+    t_chess_color opponent = OPPONENT(color);
 
     uci.level.tinc[WHITE] = 0;
     uci.level.tinc[BLACK] = 0;
@@ -801,13 +801,13 @@ void uci_send_state(char *c)
     case UCI_ENGINE_WAITING:
         strcpy(s, "Waiting");
         break;
-	case UCI_ENGINE_THINKING:
-		strcpy(s, "Thinking");
-		break;
-	case UCI_ENGINE_START_THINKING:
-		strcpy(s, "Start Thinking");
-		break;
-	}
+    case UCI_ENGINE_THINKING:
+        strcpy(s, "Thinking");
+        break;
+    case UCI_ENGINE_START_THINKING:
+        strcpy(s, "Start Thinking");
+        break;
+    }
 
     if (uci.stop)
         strcpy(st, "TRUE");
@@ -821,29 +821,29 @@ void uci_send_state(char *c)
 
 void do_uci_show_stats()
 {
-    if (uci.options.show_search_statistics){
+    if (uci.options.show_search_statistics) {
 
-		static char s[2048];
-		static char t[2048];
-		double n, f = 0, h = 0;
+        static char s[2048];
+        static char t[2048];
+        double n, f = 0, h = 0;
 
-    	/* nodes */
-    	n = 100 * (double)qnodes / (qnodes + nodes);
+        /* nodes */
+        n = 100 * (double)qnodes / (qnodes + nodes);
 
-    	/* hash performance */
-    	strcpy(s, "info string ");
-    	if (hash_probes){
-    		h = (double)hash_hits;
-    		h = (100 * h / hash_probes );
-    	}
+        /* hash performance */
+        strcpy(s, "info string ");
+        if (hash_probes) {
+            h = (double)hash_hits;
+            h = (100 * h / hash_probes );
+        }
 
-    	/* move order */
-    	if (cutoffs){
-    		f = first_move_cutoffs;
-    		f = (100 * f / cutoffs );
-    	}
-		sprintf(s, "info string QNodes = %3.1f%%, Hash Hits = %3.1f%%, Move Order = %3.1f%%\n", n, h, f);
-		send_command(s);
+        /* move order */
+        if (cutoffs) {
+            f = first_move_cutoffs;
+            f = (100 * f / cutoffs );
+        }
+        sprintf(s, "info string QNodes = %3.1f%%, Hash Hits = %3.1f%%, Move Order = %3.1f%%\n", n, h, f);
+        send_command(s);
     }
 }
 
@@ -857,24 +857,24 @@ void send_info(char *s)
 
 void uci_new_game(struct t_board *board)
 {
-	if (uci.engine_state != UCI_ENGINE_WAITING)
-		uci_stop();
+    if (uci.engine_state != UCI_ENGINE_WAITING)
+        uci_stop();
 
     clear_hash();
     clear_history();
-	configure_castling();
-	init_directory_castling_delta();
+    configure_castling();
+    init_directory_castling_delta();
 
-	uci.options.chess960 = FALSE;
-	board->chess960 = FALSE;
+    uci.options.chess960 = FALSE;
+    board->chess960 = FALSE;
 }
 
 void uci_set_debug(char *s)
 {
-	if (index_of("on", s) >= 0 || index_of("ON", s) >= 0)
-		uci.debug = TRUE;
-	else
-		uci.debug = FALSE;
+    if (index_of("on", s) >= 0 || index_of("ON", s) >= 0)
+        uci.debug = TRUE;
+    else
+        uci.debug = FALSE;
 }
 
 //void uci_set_predicted_hash(struct t_board *board)
@@ -920,18 +920,18 @@ void uci_set_debug(char *s)
 void init_engine(struct t_board *board)
 {
     if (!uci.engine_initialized) {
-		hash_age = 1;
+        hash_age = 1;
 
-		srand(time(NULL));
+        srand(time(NULL));
 
-		message_update_mask = 32767;
-		
+        message_update_mask = 32767;
+
 #if _DEBUG
-		uci.debug = TRUE;
+        uci.debug = TRUE;
 #else
-		uci.debug = FALSE;
+        uci.debug = FALSE;
 #endif
-			
+
         //initialize stuff
         init_eval_function();
         init_board(board);
@@ -941,7 +941,7 @@ void init_engine(struct t_board *board)
         init_move_directory();
         init_magic();
         init_can_move();
-		init_material_hash();
+        init_material_hash();
         uci.engine_initialized = TRUE;
     }
 };

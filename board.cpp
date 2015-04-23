@@ -257,20 +257,20 @@ void init_board(struct t_board *board)
     board->pieces[BLACK] = board->piecelist + 8;
 
     for (i = 0; i <= MAXPLY; i++) {
-		if (i == 0)
-			board->pv_data[i].previous_pv = NULL;
-		else
-			board->pv_data[i].previous_pv = &board->pv_data[i - 1];
-		if (i < MAXPLY)
-			board->pv_data[i].next_pv = &board->pv_data[i + 1];
-		else
-			board->pv_data[i].next_pv = &board->pv_data[i + 1];
+        if (i == 0)
+            board->pv_data[i].previous_pv = NULL;
+        else
+            board->pv_data[i].previous_pv = &board->pv_data[i - 1];
+        if (i < MAXPLY)
+            board->pv_data[i].next_pv = &board->pv_data[i + 1];
+        else
+            board->pv_data[i].next_pv = &board->pv_data[i + 1];
         board->pv_data[i].best_line_length = 0;
         board->pv_data[i].killer1 = NULL;
         board->pv_data[i].killer2 = NULL;
         board->pv_data[i].check_killer1 = NULL;
         board->pv_data[i].check_killer2 = NULL;
-		board->pv_data[i].in_check = FALSE;
+        board->pv_data[i].in_check = FALSE;
         init_eval(board->pv_data[i].eval);
     }
 }
@@ -295,14 +295,14 @@ void add_piece(struct t_board *board, t_chess_piece piece, t_chess_square target
     switch (PIECETYPE(piece)) {
     case PAWN:
         board->pawn_hash ^= hash_value[piece][target_square];
-		board->material_hash ^= material_hash_values[piece][popcount(board->piecelist[piece])];
+        board->material_hash ^= material_hash_values[piece][popcount(board->piecelist[piece])];
         break;
     case KING:
         board->king_square[color] = target_square;
-		board->pawn_hash ^= hash_value[piece][target_square];
+        board->pawn_hash ^= hash_value[piece][target_square];
         break;
     default:
-		board->material_hash ^= material_hash_values[piece][popcount(board->piecelist[piece])];
+        board->material_hash ^= material_hash_values[piece][popcount(board->piecelist[piece])];
     }
 }
 
@@ -323,14 +323,14 @@ void remove_piece(struct t_board *board, t_chess_square target_square)
     switch (PIECETYPE(piece)) {
     case PAWN:
         board->pawn_hash ^= hash_value[piece][target_square];
-		board->material_hash ^= material_hash_values[piece][popcount(board->piecelist[piece]) + 1];
-		break;
+        board->material_hash ^= material_hash_values[piece][popcount(board->piecelist[piece]) + 1];
+        break;
     case KING:
         board->king_square[color] = -1;
-		board->hash ^= hash_value[piece][target_square];
-		break;
+        board->hash ^= hash_value[piece][target_square];
+        break;
     default:
-		board->material_hash ^= material_hash_values[piece][popcount(board->piecelist[piece]) + 1];
+        board->material_hash ^= material_hash_values[piece][popcount(board->piecelist[piece]) + 1];
     }
 
 }
@@ -381,22 +381,22 @@ char *move_as_str(struct t_move_record *move)
     t_chess_square from_square, to_square;
     t_chess_piece promote;
 
-	if (move == NULL){
-		s[0] = '0';
-		s[1] = '0';
-		s[2] = '0';
-		s[3] = '0';
-		s[4] = 0;
-		return s;
-	}
+    if (move == NULL) {
+        s[0] = '0';
+        s[1] = '0';
+        s[2] = '0';
+        s[3] = '0';
+        s[4] = 0;
+        return s;
+    }
 
     from_square = move->from_square;
     to_square = move->to_square;
 
-	//-- Handle Chess960
-	if (move->move_type == MOVE_CASTLE && uci.options.chess960){
-		to_square = castle[move->index].rook_from;
-	}
+    //-- Handle Chess960
+    if (move->move_type == MOVE_CASTLE && uci.options.chess960) {
+        to_square = castle[move->index].rook_from;
+    }
 
     if (from_square == to_square) {
         s[0] = '0';
@@ -460,34 +460,34 @@ char *move_as_str(struct t_move_record *move)
     return s;
 }
 
-t_chess_square kingside_rook(struct t_board *board, t_chess_color color){
+t_chess_square kingside_rook(struct t_board *board, t_chess_color color) {
 
-	t_chess_square s = H1 + 56 * color;
+    t_chess_square s = H1 + 56 * color;
 
-	while ((board->square[s] != PIECEINDEX(color, ROOK)) && (board->square[s] != PIECEINDEX(color, KING)) && (s != A1 + 56 * color))
-	{
-		s--;
-	}
+    while ((board->square[s] != PIECEINDEX(color, ROOK)) && (board->square[s] != PIECEINDEX(color, KING)) && (s != A1 + 56 * color))
+    {
+        s--;
+    }
 
-	if (board->square[s] == PIECEINDEX(color, ROOK))
-		return s;
-	else
-		return -1;
+    if (board->square[s] == PIECEINDEX(color, ROOK))
+        return s;
+    else
+        return -1;
 }
 
-t_chess_square queenside_rook(struct t_board *board, t_chess_color color){
+t_chess_square queenside_rook(struct t_board *board, t_chess_color color) {
 
-	t_chess_square s = A1 + 56 * color;
+    t_chess_square s = A1 + 56 * color;
 
-	while ((board->square[s] != PIECEINDEX(color, ROOK)) && (board->square[s] != PIECEINDEX(color, KING)) && (s != H1 + 56 * color))
-	{
-		s++;
-	}
+    while ((board->square[s] != PIECEINDEX(color, ROOK)) && (board->square[s] != PIECEINDEX(color, KING)) && (s != H1 + 56 * color))
+    {
+        s++;
+    }
 
-	if (board->square[s] == PIECEINDEX(color, ROOK))
-		return s;
-	else
-		return -1;
+    if (board->square[s] == PIECEINDEX(color, ROOK))
+        return s;
+    else
+        return -1;
 }
 
 BOOL integrity(struct t_board *board) {
@@ -540,17 +540,17 @@ BOOL integrity(struct t_board *board) {
         return FALSE;
     if (board->hash != calc_board_hash(board))
         return FALSE;
-	if (board->material_hash != calc_material_hash(board))
-		return FALSE;
+    if (board->material_hash != calc_material_hash(board))
+        return FALSE;
 
     //-- In check and shouldn't be!
     if (attack_count(board, board->king_square[OPPONENT(board->to_move)], board->to_move) != 0)
         return FALSE;
 
-	//-- In Check Count
-	if (board->in_check != attack_count(board, board->king_square[board->to_move], OPPONENT(board->to_move))){
-		return FALSE;
-	}
+    //-- In Check Count
+    if (board->in_check != attack_count(board, board->king_square[board->to_move], OPPONENT(board->to_move))) {
+        return FALSE;
+    }
 
     return TRUE;
 }
@@ -610,25 +610,25 @@ void flip_board(struct t_board *board) {
             board->square[i] = BLANK;
     }
 
-	//-- Castling rights
-	board->castling = (((board->castling & 3) << 2) | (board->castling >> 2));
-	if (board->chess960){
-		for (i = 0; i < 4; i++){
-			color = (i / 2);
-			if (board->castling & (uchar(1) << i)){
-				if (i & uchar(1))
-					init_960_castling(board, board->king_square[color], queenside_rook(board, color));
-				else
-					init_960_castling(board, board->king_square[color], kingside_rook(board, color));
-			}
-		}
-	}
+    //-- Castling rights
+    board->castling = (((board->castling & 3) << 2) | (board->castling >> 2));
+    if (board->chess960) {
+        for (i = 0; i < 4; i++) {
+            color = (i / 2);
+            if (board->castling & (uchar(1) << i)) {
+                if (i & uchar(1))
+                    init_960_castling(board, board->king_square[color], queenside_rook(board, color));
+                else
+                    init_960_castling(board, board->king_square[color], kingside_rook(board, color));
+            }
+        }
+    }
 
     board->to_move = opponent;
 
     board->hash = calc_board_hash(board);
     board->pawn_hash = calc_pawn_hash(board);
-	board->material_hash = calc_material_hash(board);
+    board->material_hash = calc_material_hash(board);
 
     assert(integrity(board));
 }

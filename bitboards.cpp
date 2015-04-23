@@ -48,17 +48,17 @@ void init_bitboards()
     t_chess_color color;
     t_bitboard b;
 
-	//-- Square Column / Rank Mask
-	memset(square_column_mask, 0, sizeof(square_column_mask));
-	memset(square_rank_mask, 0, sizeof(square_column_mask));
-	for (f = 0; f <= 7; f++){
-		for (r = 0; r <= 7; r++){
-			for (i = 0; i <= 7; i++){
-				square_column_mask[r * 8 + f] |= SQUARE64(i * 8 + f);
-				square_rank_mask[r * 8 + f] |= SQUARE64(r * 8 + i);
-			}
-		}
-	}
+    //-- Square Column / Rank Mask
+    memset(square_column_mask, 0, sizeof(square_column_mask));
+    memset(square_rank_mask, 0, sizeof(square_column_mask));
+    for (f = 0; f <= 7; f++) {
+        for (r = 0; r <= 7; r++) {
+            for (i = 0; i <= 7; i++) {
+                square_column_mask[r * 8 + f] |= SQUARE64(i * 8 + f);
+                square_rank_mask[r * 8 + f] |= SQUARE64(r * 8 + i);
+            }
+        }
+    }
 
     // Initialize rank
     for (r = 0; r < 8; r++) {
@@ -122,15 +122,15 @@ void init_bitboards()
                 pawn_attackers[BLACK][s] |= (b << 9);
         }
 
-		//-- in front white
-		forward_squares[WHITE][s] = 0;
-		forward_squares[WHITE][s] = (b << 8) | (b << 16) | (b << 24) | (b << 32) | (b << 40) | (b << 48) | (b << 56);
+        //-- in front white
+        forward_squares[WHITE][s] = 0;
+        forward_squares[WHITE][s] = (b << 8) | (b << 16) | (b << 24) | (b << 32) | (b << 40) | (b << 48) | (b << 56);
 
-		//--in front black
-		forward_squares[BLACK][s] = 0;
-		forward_squares[BLACK][s] = (b >> 8) | (b >> 16) | (b >> 24) | (b >> 32) | (b >> 40) | (b >> 48) | (b >> 56);
+        //--in front black
+        forward_squares[BLACK][s] = 0;
+        forward_squares[BLACK][s] = (b >> 8) | (b >> 16) | (b >> 24) | (b >> 32) | (b >> 40) | (b >> 48) | (b >> 56);
 
-		// Bishop
+        // Bishop
         line[s][s] = SQUARE64(s);
         d = 0;
         for (delta = direction[BISHOP][d]; (delta = direction[BISHOP][d]) != 0; d++) {
@@ -189,44 +189,44 @@ void init_bitboards()
                 king_mask[s] |= SQUARE64(x88_TO_64(target));
         }
 
-		//-- Connected passed pawn mask
-		connected_pawn_mask[s] = king_mask[s] & neighboring_file[COLUMN(s)];
+        //-- Connected passed pawn mask
+        connected_pawn_mask[s] = king_mask[s] & neighboring_file[COLUMN(s)];
 
-		//-- Vulnerable squares around king
+        //-- Vulnerable squares around king
 
-		king_zone[s] = SQUARE64(s);
-		if (COLUMN(s) > 0)
-			king_zone[s] |= SQUARE64(s - 1);
-		if (COLUMN(s) < 7)
-			king_zone[s] |= SQUARE64(s + 1);
-		king_zone[s] |= ((king_zone[s] << 8) | (king_zone[s] >> 8));
+        king_zone[s] = SQUARE64(s);
+        if (COLUMN(s) > 0)
+            king_zone[s] |= SQUARE64(s - 1);
+        if (COLUMN(s) < 7)
+            king_zone[s] |= SQUARE64(s + 1);
+        king_zone[s] |= ((king_zone[s] << 8) | (king_zone[s] >> 8));
 
     }
 
-	//-- King Castle Square
-	king_castle_squares[WHITE][KINGSIDE] = (SQUARE64(F1) | SQUARE64(G1) | SQUARE64(H1) | SQUARE64(F2) | SQUARE64(G2) | SQUARE64(H2));
-	king_castle_squares[WHITE][QUEENSIDE] = (SQUARE64(A1) | SQUARE64(B1) | SQUARE64(C1) | SQUARE64(A2) | SQUARE64(B2) | SQUARE64(C2));
-	king_castle_squares[BLACK][KINGSIDE] = (SQUARE64(F8) | SQUARE64(G8) | SQUARE64(H8) | SQUARE64(F7) | SQUARE64(G7) | SQUARE64(H7));
-	king_castle_squares[BLACK][QUEENSIDE] = (SQUARE64(A8) | SQUARE64(B8) | SQUARE64(C8) | SQUARE64(A7) | SQUARE64(B7) | SQUARE64(C7));
+    //-- King Castle Square
+    king_castle_squares[WHITE][KINGSIDE] = (SQUARE64(F1) | SQUARE64(G1) | SQUARE64(H1) | SQUARE64(F2) | SQUARE64(G2) | SQUARE64(H2));
+    king_castle_squares[WHITE][QUEENSIDE] = (SQUARE64(A1) | SQUARE64(B1) | SQUARE64(C1) | SQUARE64(A2) | SQUARE64(B2) | SQUARE64(C2));
+    king_castle_squares[BLACK][KINGSIDE] = (SQUARE64(F8) | SQUARE64(G8) | SQUARE64(H8) | SQUARE64(F7) | SQUARE64(G7) | SQUARE64(H7));
+    king_castle_squares[BLACK][QUEENSIDE] = (SQUARE64(A8) | SQUARE64(B8) | SQUARE64(C8) | SQUARE64(A7) | SQUARE64(B7) | SQUARE64(C7));
 
-	//-- Pawn Shelter
-	intact_pawns[WHITE][KINGSIDE] = (SQUARE64(F2) | SQUARE64(G2) | SQUARE64(H2));
-	intact_pawns[WHITE][QUEENSIDE] = (SQUARE64(A2) | SQUARE64(B2) | SQUARE64(C2));
-	intact_pawns[BLACK][KINGSIDE] = (SQUARE64(F7) | SQUARE64(G7) | SQUARE64(H7));
-	intact_pawns[BLACK][QUEENSIDE] = (SQUARE64(A7) | SQUARE64(B7) | SQUARE64(C7));
+    //-- Pawn Shelter
+    intact_pawns[WHITE][KINGSIDE] = (SQUARE64(F2) | SQUARE64(G2) | SQUARE64(H2));
+    intact_pawns[WHITE][QUEENSIDE] = (SQUARE64(A2) | SQUARE64(B2) | SQUARE64(C2));
+    intact_pawns[BLACK][KINGSIDE] = (SQUARE64(F7) | SQUARE64(G7) | SQUARE64(H7));
+    intact_pawns[BLACK][QUEENSIDE] = (SQUARE64(A7) | SQUARE64(B7) | SQUARE64(C7));
 
-	wrecked_pawns[WHITE][KINGSIDE] = (SQUARE64(G2) | SQUARE64(G3));
-	wrecked_pawns[WHITE][QUEENSIDE] = (SQUARE64(B2) | SQUARE64(B3));
-	wrecked_pawns[BLACK][KINGSIDE] = (SQUARE64(G7) | SQUARE64(G6));
-	wrecked_pawns[BLACK][QUEENSIDE] = (SQUARE64(B7) | SQUARE64(B6));
+    wrecked_pawns[WHITE][KINGSIDE] = (SQUARE64(G2) | SQUARE64(G3));
+    wrecked_pawns[WHITE][QUEENSIDE] = (SQUARE64(B2) | SQUARE64(B3));
+    wrecked_pawns[BLACK][KINGSIDE] = (SQUARE64(G7) | SQUARE64(G6));
+    wrecked_pawns[BLACK][QUEENSIDE] = (SQUARE64(B7) | SQUARE64(B6));
 
-	pawn_wedge_mask[WHITE][KINGSIDE] = SQUARE64(F6);
-	pawn_wedge_mask[WHITE][QUEENSIDE] = SQUARE64(C6);
-	pawn_wedge_mask[BLACK][KINGSIDE] = SQUARE64(F3);
-	pawn_wedge_mask[BLACK][QUEENSIDE] = SQUARE64(C3);
+    pawn_wedge_mask[WHITE][KINGSIDE] = SQUARE64(F6);
+    pawn_wedge_mask[WHITE][QUEENSIDE] = SQUARE64(C6);
+    pawn_wedge_mask[BLACK][KINGSIDE] = SQUARE64(F3);
+    pawn_wedge_mask[BLACK][QUEENSIDE] = SQUARE64(C3);
 
-	assert(king_zone[C1] == (SQUARE64(B1) | SQUARE64(C1) | SQUARE64(D1) | SQUARE64(B2) | SQUARE64(C2) | SQUARE64(D2)));
-	assert(connected_pawn_mask[C2] == (SQUARE64(B1) | SQUARE64(B2) | SQUARE64(B3) | SQUARE64(D1) | SQUARE64(D2) | SQUARE64(D3)));
+    assert(king_zone[C1] == (SQUARE64(B1) | SQUARE64(C1) | SQUARE64(D1) | SQUARE64(B2) | SQUARE64(C2) | SQUARE64(D2)));
+    assert(connected_pawn_mask[C2] == (SQUARE64(B1) | SQUARE64(B2) | SQUARE64(B3) | SQUARE64(D1) | SQUARE64(D2) | SQUARE64(D3)));
     assert(pawn_attackers[WHITE][E4] == (SQUARE64(D3) | SQUARE64(F3)));
     assert(pawn_attackers[BLACK][H4] == SQUARE64(G5));
     assert(pawn_attackers[WHITE][A8] == SQUARE64(B7));
@@ -234,45 +234,45 @@ void init_bitboards()
     assert(line[C2][F2] == (SQUARE64(C2) | SQUARE64(D2) | SQUARE64(E2) | SQUARE64(F2)));
     assert(line[D4][G1] == (SQUARE64(D4) | SQUARE64(E3) | SQUARE64(F2) | SQUARE64(G1)));
 
-	//-- Unstoppable Pawns
-	init_unstoppable_pawn_mask();
+    //-- Unstoppable Pawns
+    init_unstoppable_pawn_mask();
 
 }
 
 static inline int square_distance(int s1, int s2)
 {
-	int r = abs(RANK(s1) - RANK(s2));
-	int c = abs(COLUMN(s1) - COLUMN(s2));
-	if (r > c)
-		return r;
-	else
-		return c;
+    int r = abs(RANK(s1) - RANK(s2));
+    int c = abs(COLUMN(s1) - COLUMN(s2));
+    if (r > c)
+        return r;
+    else
+        return c;
 };
 
 void init_unstoppable_pawn_mask()
 {
 
-	for (t_chess_color color = WHITE; color <= BLACK; color++){
-		for (t_chess_square king_square = A1; king_square <= H8; king_square++){
+    for (t_chess_color color = WHITE; color <= BLACK; color++) {
+        for (t_chess_square king_square = A1; king_square <= H8; king_square++) {
 
-			cannot_catch_pawn_mask[color][WHITE][king_square] = 0;
-			cannot_catch_pawn_mask[color][BLACK][king_square] = 0;
+            cannot_catch_pawn_mask[color][WHITE][king_square] = 0;
+            cannot_catch_pawn_mask[color][BLACK][king_square] = 0;
 
-			for (t_chess_square pawn_square = A1; pawn_square <= H8; pawn_square++){
+            for (t_chess_square pawn_square = A1; pawn_square <= H8; pawn_square++) {
 
-				t_chess_square promote_square = COLUMN(pawn_square) + A8 * color;
+                t_chess_square promote_square = COLUMN(pawn_square) + A8 * color;
 
-				for (t_chess_color to_move = WHITE; to_move <= BLACK; to_move++){
+                for (t_chess_color to_move = WHITE; to_move <= BLACK; to_move++) {
 
-					if (min(5, square_distance(pawn_square, promote_square)) < (square_distance(king_square, promote_square) - (to_move == color)))
-						cannot_catch_pawn_mask[color][to_move][king_square] |= SQUARE64(pawn_square);
-				}				
-			}
-		}
-	}
+                    if (min(5, square_distance(pawn_square, promote_square)) < (square_distance(king_square, promote_square) - (to_move == color)))
+                        cannot_catch_pawn_mask[color][to_move][king_square] |= SQUARE64(pawn_square);
+                }
+            }
+        }
+    }
 
-	//-- Test
-	assert(cannot_catch_pawn_mask[BLACK][BLACK][G5] == 18446470308215914496);
+    //-- Test
+    assert(cannot_catch_pawn_mask[BLACK][BLACK][G5] == 18446470308215914496);
 }
 
 void init_magic()

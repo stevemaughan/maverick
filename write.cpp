@@ -103,9 +103,9 @@ void write_board(struct t_board *board, char filename[1024])
         fprintf(tfile, "\n");
     }
 
-	//-- Board Hash
-	sprintf(s, "Hash = %llu \n", board->hash);
-	fprintf(tfile, s);
+    //-- Board Hash
+    sprintf(s, "Hash = %llu \n", board->hash);
+    fprintf(tfile, s);
 
     fclose(tfile);
 }

@@ -181,17 +181,17 @@ struct t_move_record
     int										index;
     t_chess_value							history;
     int										mvvlva;
-	struct t_move_record					*refutation;
+    struct t_move_record					*refutation;
 };
 
 struct t_move_list
 {
     int										count;							// Number of moves (this doesn't change)
     int										imove;							// This starts at "count" and is decremented as the moves are played
-	struct t_move_record					*current_move;					// The move last played
-	BOOL									current_move_see_positive;		// True if the current capture is NOT see negative
-	struct t_move_record					*hash_move;						// The hash move
-	t_bitboard								pinned_pieces;					// A bitboard which stores the position of pinned pieces
+    struct t_move_record					*current_move;					// The move last played
+    BOOL									current_move_see_positive;		// True if the current capture is NOT see negative
+    struct t_move_record					*hash_move;						// The hash move
+    t_bitboard								pinned_pieces;					// A bitboard which stores the position of pinned pieces
     struct t_move_record					*move[256];						// The moves!
     signed long long						value[256];						// Notional values for all of the moves
 };
@@ -206,7 +206,7 @@ struct t_undo
     uchar									in_check;
     t_hash									hash;
     t_hash									pawn_hash;
-	t_hash									material_hash;
+    t_hash									material_hash;
 };
 
 struct t_castle_record
@@ -218,7 +218,7 @@ struct t_castle_record
     t_chess_square							rook_to;			// position of the rook after castling
     t_bitboard								rook_from_to;		// from and to bitboard of rook
     t_chess_piece							rook_piece;			// white or black rook
-	uchar									mask;
+    uchar									mask;
 };
 
 //===========================================================//
@@ -226,17 +226,17 @@ struct t_castle_record
 //===========================================================//
 struct t_chess_eval
 {
-	struct t_pawn_hash_record				*pawn_evaluation;
-	int										game_phase;
-	t_chess_value							middlegame;
-	t_chess_value							endgame;
-	t_chess_value							static_score;
-	t_bitboard								attacklist[15];
-	t_bitboard								*attacks[2];
-	t_bitboard								king_zone[2];
-	int										king_attack_count[2];
-	int										king_attack_pressure[2];
-	t_chess_value							king_attack[2];				// The pressure against the opponents king - so king_attack[WHITE] measures the pressure against the black king
+    struct t_pawn_hash_record				*pawn_evaluation;
+    int										game_phase;
+    t_chess_value							middlegame;
+    t_chess_value							endgame;
+    t_chess_value							static_score;
+    t_bitboard								attacklist[15];
+    t_bitboard								*attacks[2];
+    t_bitboard								king_zone[2];
+    int										king_attack_count[2];
+    int										king_attack_pressure[2];
+    t_chess_value							king_attack[2];				// The pressure against the opponents king - so king_attack[WHITE] measures the pressure against the black king
 };
 
 //===========================================================//
@@ -245,19 +245,19 @@ struct t_chess_eval
 #define HASH_ATTEMPTS						4
 
 typedef enum hash_bound {
-	HASH_LOWER,
-	HASH_EXACT,
-	HASH_UPPER
+    HASH_LOWER,
+    HASH_EXACT,
+    HASH_UPPER
 } t_hash_bound;
 
 struct t_hash_record
 {
     t_hash									key;
-	t_hash_bound							bound;
-	int										depth;
-	int										age;
-	t_chess_value							score;
-	struct t_move_record					*move;
+    t_hash_bound							bound;
+    int										depth;
+    int										age;
+    t_chess_value							score;
+    struct t_move_record					*move;
 };
 
 struct t_pawn_hash_record
@@ -265,29 +265,29 @@ struct t_pawn_hash_record
     t_hash									key;
     t_chess_value							middlegame;
     t_chess_value							endgame;
-	t_chess_value							king_pawn_endgame_score;
+    t_chess_value							king_pawn_endgame_score;
     t_bitboard								forward_squares[2];
     t_bitboard								backward_squares[2];
     t_bitboard								attacks[2];
     t_bitboard								passed[2];
     t_bitboard								candidate_passed[2];
-	t_bitboard								potential_outpost[2];
+    t_bitboard								potential_outpost[2];
     t_bitboard								double_pawns[2];
     t_bitboard								backward[2];
     t_bitboard								isolated[2];
     t_bitboard								blocked[2];
     t_bitboard								weak[2];
-	t_bitboard								open_file;
-	t_bitboard								semi_open_file[2];
-	t_chess_value							king_pressure[2];
-	int										pawn_count[2];
-	int										semi_open_double_pawns[2]; // number of double pawns on semi open files
+    t_bitboard								open_file;
+    t_bitboard								semi_open_file[2];
+    t_chess_value							king_pressure[2];
+    int										pawn_count[2];
+    int										semi_open_double_pawns[2]; // number of double pawns on semi open files
 };
 
 struct t_material_hash_record
 {
-	t_hash									key;
-	void									(*eval_endgame)(struct t_board *board, struct t_chess_eval *eval);
+    t_hash									key;
+    void									(*eval_endgame)(struct t_board *board, struct t_chess_eval *eval);
 };
 
 //===========================================================//
@@ -295,12 +295,12 @@ struct t_material_hash_record
 //===========================================================//
 enum t_node_type
 {
-	node_cut,
-	node_super_cut,
-	node_pv,
-	node_lite_all,
-	node_super_all,
-	node_all
+    node_cut,
+    node_super_cut,
+    node_pv,
+    node_lite_all,
+    node_super_all,
+    node_all
 };
 
 struct t_perft_pv_data
@@ -314,19 +314,19 @@ struct t_perft_pv_data
 struct t_pv_data
 {
     struct t_chess_eval						eval[1];
-	int										reduction;
-	struct t_move_record					*current_move;
+    int										reduction;
+    struct t_move_record					*current_move;
     struct t_move_record					*killer1;
     struct t_move_record					*killer2;
     struct t_move_record					*check_killer1;
     struct t_move_record					*check_killer2;
-	BOOL									in_check;
+    BOOL									in_check;
     int										legal_moves_played;
     int										best_line_length;
     struct t_move_record					*best_line[MAXPLY + 1];
-	struct t_pv_data						*previous_pv;
-	struct t_pv_data						*next_pv;
-	t_node_type								node_type;
+    struct t_pv_data						*previous_pv;
+    struct t_pv_data						*next_pv;
+    t_node_type								node_type;
 };
 
 
@@ -342,7 +342,7 @@ struct t_board
     t_chess_color							to_move;
     t_hash									hash;
     t_hash									pawn_hash;
-	t_hash									material_hash;
+    t_hash									material_hash;
     BOOL									chess960;
     uchar									castling;
     t_bitboard								ep_square;
@@ -352,7 +352,7 @@ struct t_board
     t_chess_square							square[64];
     uchar									fifty_move_count;
     struct t_pv_data						pv_data[MAXPLY + 2];
-	BOOL									castling_squares_changed;
+    BOOL									castling_squares_changed;
 };
 
 //===========================================================//
@@ -368,7 +368,7 @@ struct t_level
     int										ponder;
     int										infinite;
     t_chess_time							time[2];
-	t_chess_time							tinc[2];
+    t_chess_time							tinc[2];
     t_nodes									nodes;
     int										depth;
     int										movestogo;
@@ -382,7 +382,7 @@ struct t_uci_options
     int										pawn_hash_table_size;
     BOOL									current_line;
     BOOL									show_search_statistics;
-	BOOL									chess960;
+    BOOL									chess960;
 };
 
 struct t_uci_thinking
@@ -410,7 +410,7 @@ struct t_uci
     struct t_level							level;
     struct t_uci_options					options;
     struct t_uci_thinking					thinking;
-	BOOL									debug;
+    BOOL									debug;
     BOOL									engine_initialized;
 };
 
@@ -447,15 +447,15 @@ struct t_magic_structure
 //===========================================================//
 // Multi-PV
 //===========================================================//
-struct t_pv_record{
-	t_chess_value							score;
-	int										pv_length;
-	struct t_move_record					*move[MAXPLY];
+struct t_pv_record {
+    t_chess_value							score;
+    int										pv_length;
+    struct t_move_record					*move[MAXPLY];
 };
 
 struct t_multi_pv {
-	int										count;
-	struct t_pv_record						pv[128];
+    int										count;
+    struct t_pv_record						pv[128];
 };
 
 //===========================================================//
@@ -542,7 +542,7 @@ struct t_multi_pv {
 // UCI Information Strings
 //================================================================
 #if _WIN32
-#define NODE_FORMAT								"%I64d"
+#define NODE_FORMAT								"%I64u"
 #else
 #define NODE_FORMAT								"%llu"
 #endif

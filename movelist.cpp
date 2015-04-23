@@ -62,14 +62,14 @@ void update_move_value(struct t_move_record *move, struct t_move_list *move_list
     }
 }
 
-BOOL is_move_in_list(struct t_move_record *move, struct t_move_list *move_list){
+BOOL is_move_in_list(struct t_move_record *move, struct t_move_list *move_list) {
 
-	for (int i = 0; i < move_list->count; i++)
-	{
-		if (move_list->move[i] == move) 
-			return TRUE;
-	}
+    for (int i = 0; i < move_list->count; i++)
+    {
+        if (move_list->move[i] == move)
+            return TRUE;
+    }
 
-	return FALSE;
+    return FALSE;
 
 }

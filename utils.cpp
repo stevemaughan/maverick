@@ -19,17 +19,18 @@
 #include "procs.h"
 #include "bittwiddle.h"
 
+
 unsigned long time_now()
 {
-	#if defined(__arm__) || defined(__linux__) || defined(__MINGW32__)
-	return GetTickCount();
+#if defined(__arm__) || defined(__linux__) || defined(__MINGW32__)
+    return GetTickCount();
 
-	#elif defined _WIN32 && !_WIN64
-	return GetTickCount();
-	
-	#else
+#elif defined _WIN32 && !_WIN64
+    return GetTickCount();
+
+#else
 	return GetTickCount64();
-	#endif
+#endif
 }
 
 int index_of(char *substr, char *s)
@@ -38,8 +39,8 @@ int index_of(char *substr, char *s)
 
     w = word_count(s);
 
-	if (w == 0)
-		return -1;
+    if (w == 0)
+        return -1;
 
     i = 0;
     do {
@@ -116,7 +117,7 @@ int word_count(char *s)
     }
     n = 1;
     l = strlen(s);
-    for (i=0;i<l;i++)
+    for (i=0; i<l; i++)
     {
         if (i==0)
         {
@@ -174,15 +175,15 @@ void qsort_moves(struct t_move_list *move_list, int first, int last)
     low = first;
     high = last;
 
-	assert(first <= last);
-	assert(first >= 0);
-	assert(last < 256);
+    assert(first <= last);
+    assert(first >= 0);
+    assert(last < 256);
 
-	midval = (move_list->value[low] + move_list->value[high]) >> 1;
+    midval = (move_list->value[low] + move_list->value[high]) >> 1;
 
-	while (low < high) {
+    while (low < high) {
 
-		while ((move_list->value[low] > midval) && (low < last))
+        while ((move_list->value[low] > midval) && (low < last))
             low++;
         while ((move_list->value[high] < midval) && (high > first))
             high--;
@@ -192,11 +193,11 @@ void qsort_moves(struct t_move_list *move_list, int first, int last)
             move_list->move[low] = move_list->move[high];
             move_list->move[high] = temp_move;
 
-			temp_value = move_list->value[low];
+            temp_value = move_list->value[low];
             move_list->value[low] = move_list->value[high];
             move_list->value[high] = temp_value;
 
-			low++;
+            low++;
             high--;
         }
     }
