@@ -406,7 +406,7 @@ void uci_setoption(char *s)
 void do_uci_new_pv(struct t_board *board, int score, int depth)
 {
     //-- Don' waist bandwidth
-    if (depth < 2)
+    if (depth < 2 && score > -MAX_CHECKMATE && score < MAX_CHECKMATE)
         return;
 
     static char pv[2048];
@@ -444,8 +444,8 @@ void do_uci_new_pv(struct t_board *board, int score, int depth)
 void do_uci_fail_high(struct t_board *board, int score, int depth)
 {
     //-- Don' waist bandwidth
-    if (depth < 4)
-        return;
+	if (depth < 4 && score > -MAX_CHECKMATE && score < MAX_CHECKMATE)
+		return;
 
     static char pv[2048];
     static char s[2048];
@@ -481,7 +481,8 @@ void do_uci_fail_low(struct t_board *board, int score, int depth)
     int v;
     unsigned long t;
 
-    if (depth < 3 || uci.stop)  return;
+	if (depth < 4 && score > -MAX_CHECKMATE && score < MAX_CHECKMATE)
+		return;
 
     t = time_now() - search_start_time;
 

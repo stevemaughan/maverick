@@ -179,13 +179,14 @@ inline void calc_piece_value(struct t_board *board, struct t_chess_eval *eval) {
 
         //-- Rooks on Open file
         if (b & pawn_record->open_file) {
-            middlegame += pawn_record->pawn_count[color] * MG_ROOK_ON_OPEN_FILE;
+			middlegame += popcount(b & pawn_record->open_file) * pawn_record->pawn_count[color] * MG_ROOK_ON_OPEN_FILE;
         }
 
         //-- Rooks on Semi-Open file
         if (b & pawn_record->semi_open_file[color]) {
-            middlegame += pawn_record->pawn_count[color] * MG_ROOK_ON_SEMI_OPEN_FILE;
+			middlegame += popcount(b & pawn_record->semi_open_file[color]) * pawn_record->pawn_count[color] * MG_ROOK_ON_SEMI_OPEN_FILE;
         }
+
 
 
         //-- Loop around for all pieces

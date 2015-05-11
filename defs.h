@@ -7,7 +7,7 @@
 // Define Version
 //===========================================================//
 #define ENGINE_NAME							"Maverick"
-#define VERSION_NUMBER						"1.0"
+#define VERSION_NUMBER						"2.0 alpha"
 
 #if defined(_WIN32) && !defined(_WIN64)
 #define ENGINE_VERSION					VERSION_NUMBER " x86"
@@ -32,6 +32,10 @@
 typedef int BOOL;
 #define TRUE								1
 #define FALSE								0
+#ifndef min
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
 
 //===========================================================//
 // Basic Chess Constants
@@ -160,7 +164,7 @@ typedef enum enginestates {
 #define PIECEMASK(x)						((t_piece_mask)1 << (x))
 #define SQUARECOLOR(x)						((x & 1) ^ (RANK(x) & 1) ^ 1)
 #define PROMOTION_SQUARE(color, square)		(56 * (1 - color) + COLUMN(square))
-
+#define COLOR_RANK(color, square)			(COLOR(color) ? (7 - RANK(square)) : RANK(square))
 
 //===========================================================//
 // Global Move List Record Structure
@@ -315,12 +319,14 @@ struct t_pv_data
 {
     struct t_chess_eval						eval[1];
     int										reduction;
+	BOOL									extension;
     struct t_move_record					*current_move;
     struct t_move_record					*killer1;
     struct t_move_record					*killer2;
     struct t_move_record					*check_killer1;
-    struct t_move_record					*check_killer2;
-    BOOL									in_check;
+	struct t_move_record					*check_killer2;
+	struct t_move_record					*null_refutation;
+	BOOL									in_check;
     int										legal_moves_played;
     int										best_line_length;
     struct t_move_record					*best_line[MAXPLY + 1];

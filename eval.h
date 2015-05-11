@@ -15,7 +15,7 @@
 
 //-- Piece Values
 #define MG_PAWN_VALUE					100
-#define EG_PAWN_VALUE					100
+#define EG_PAWN_VALUE					120
 
 #define MG_KNIGHT_VALUE					350
 #define EG_KNIGHT_VALUE					330
@@ -27,7 +27,7 @@
 #define EG_ROOK_VALUE					550
 
 #define MG_QUEEN_VALUE					1000
-#define EG_QUEEN_VALUE					1000
+#define EG_QUEEN_VALUE					1050
 
 //-- Bishop Pair
 #define MG_BISHOP_PAIR					25

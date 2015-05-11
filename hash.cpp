@@ -57,11 +57,9 @@ void poke(t_hash hash_key, t_chess_value score, int ply, int depth, t_hash_bound
 
     /* adjust mate score */
     if (score >= MAX_CHECKMATE) {
-        //if (bound == HASH_UPPER) return;
         poke_score += ply;
     }
     else if (score <= -MAX_CHECKMATE) {
-        //if (bound == HASH_LOWER) return;
         poke_score -= ply;
     }
 
@@ -71,23 +69,29 @@ void poke(t_hash hash_key, t_chess_value score, int ply, int depth, t_hash_bound
     for (i = HASH_ATTEMPTS; i > 0; i--, h++) {
 
         //-- Do we have a match (always replace the match)
-        if (h->key == hash_key) {
+		if (h->key == hash_key) {
 
-            if (h->age != hash_age)
-                hash_full++;
-            h->age = hash_age;
+			//-- Make the current entry fresh
+			h->age = hash_age;
 
-            if (h->depth <= depth || bound != HASH_UPPER) {
-                h->bound = bound;
-                h->score = poke_score;
-                h->depth = depth;
-                h->key = hash_key;
-                h->move = move;
-            }
+			if (h->age != hash_age)
+				hash_full++;
+
+			if (h->depth < depth){// || (h->depth <= depth + 2 && bound != HASH_UPPER)) {
+
+				h->bound = bound;
+				h->score = poke_score;
+				h->depth = depth;
+				if (move != NULL)
+					h->move = move;
+			}
+			else if (h->move == NULL)
+				h->move = move;
+
             return;
         }
         else {
-            h_score = (h->key == 0) * 4096 + (hash_age - h->age) * 4096 + h->depth * 16 + (h->bound == HASH_EXACT) * 16 + (h->bound == HASH_LOWER);
+            h_score = ((h->key == 0) << 16) + ((hash_age - h->age) << 10) - h->depth * 16 - (h->bound == HASH_EXACT) * 64 - (h->bound == HASH_LOWER) * 16;
             if (h_score > best_score) {
                 best_score = h_score;
                 best_hash = h;
@@ -104,6 +108,7 @@ void poke(t_hash hash_key, t_chess_value score, int ply, int depth, t_hash_bound
     best_hash->key = hash_key;
     best_hash->score = poke_score;
     best_hash->move = move;
+
     return;
 }
 
@@ -167,7 +172,6 @@ void poke_draw(t_hash hash_key)
             h->score = 0;
             h->depth = MAXPLY;
             h->key = hash_key;
-            h->move = NULL;
             return;
         }
         else {
