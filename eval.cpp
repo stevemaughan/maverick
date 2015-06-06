@@ -107,7 +107,7 @@ t_chess_value calc_evaluation(struct t_board *board, struct t_chess_eval *eval) 
     //-- Is the king in danger
     calc_king_safety(board, eval);
 
-    //-- Return the rights score
+    //-- Scale the score and adjust for color to move
     score = (1 - 2 * board->to_move) * (((eval->middlegame * eval->game_phase) + (eval->endgame * (256 - eval->game_phase))) / 256);
 
     //-- Store the score

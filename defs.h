@@ -165,6 +165,7 @@ typedef enum enginestates {
 #define SQUARECOLOR(x)						((x & 1) ^ (RANK(x) & 1) ^ 1)
 #define PROMOTION_SQUARE(color, square)		(56 * (1 - color) + COLUMN(square))
 #define COLOR_RANK(color, square)			(COLOR(color) ? (7 - RANK(square)) : RANK(square))
+#define CAN_CASTLE(color, castle_flag)		(castle_flag & (((uchar)3) << (color * 2)))
 
 //===========================================================//
 // Global Move List Record Structure
@@ -320,6 +321,7 @@ struct t_pv_data
     struct t_chess_eval						eval[1];
     int										reduction;
 	BOOL									extension;
+	int										mate_threat;
     struct t_move_record					*current_move;
     struct t_move_record					*killer1;
     struct t_move_record					*killer2;
@@ -389,6 +391,7 @@ struct t_uci_options
     BOOL									current_line;
     BOOL									show_search_statistics;
     BOOL									chess960;
+	BOOL									futility_pruning;
 };
 
 struct t_uci_thinking

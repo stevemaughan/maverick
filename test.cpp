@@ -667,16 +667,23 @@ BOOL test_see() {
     ok &= !see(position, move, 0);
 
 	////-- Test SEE on a square
-	//set_fen(position, "4k3/1ppn4/p5rr/1B3p2/2p1p3/1b3P2/PPP1P1BR/3K3R w - -");
-	//ok &= (see_square(position, H6, 0) == TRUE);
-	//ok &= (see_square(position, E4, 0) == TRUE);
-	//ok &= (see_square(position, A6, 0) == FALSE);
-	//ok &= (see_square(position, C4, 0) == FALSE);
-	//ok &= (see_square(position, B3, 0) == TRUE);
-	//ok &= (see_square(position, F5, 0) == FALSE);
+	set_fen(position, "4k3/1ppn4/p5rr/1B3p2/2p1p3/1b3P2/PPP1P1BR/3K3R w - -");
+	ok &= (see_safe(position, H6, 0) == FALSE);
+	ok &= (see_safe(position, E4, 0) == FALSE);
+	ok &= (see_safe(position, A6, 0) == TRUE);
+	ok &= (see_safe(position, C4, 0) == TRUE);
+	ok &= (see_safe(position, B3, 0) == FALSE);
+	ok &= (see_safe(position, F5, 0) == TRUE);
 
+	set_fen(position, "2k1K3/7p/6p1/1p2RrR1/8/8/8/8 w - -");
+	ok &= (see_safe(position, F5, 0) == FALSE);
+	ok &= (see_safe(position, G6, 0) == TRUE);
+	ok &= (see_safe(position, B5, 0) == FALSE);
 
-    return ok;
+	set_fen(position, "4k3/1ppn4/p5rr/1B3p2/2p1p3/1b3P2/PPP1P2R/3K3R w - -");
+	ok &= (see_safe(position, E4, 50) == FALSE);
+	
+	return ok;
 }
 
 BOOL test_position()

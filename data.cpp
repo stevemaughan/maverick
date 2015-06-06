@@ -73,11 +73,6 @@ long perft_start_time;
 long perft_end_time;
 
 // ----------------------------------------------------------//
-// Aspiration Window
-// ----------------------------------------------------------//
-const t_chess_value aspiration_window[2][6] = {{1, 25, 150, CHESS_INFINITY, CHESS_INFINITY, CHESS_INFINITY}, { 1, 100, CHESS_INFINITY, CHESS_INFINITY, CHESS_INFINITY, CHESS_INFINITY }};
-
-// ----------------------------------------------------------//
 // Direction of moving pieces
 // ----------------------------------------------------------//
 const BOOL slider[15] = {FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE};
@@ -380,6 +375,11 @@ const t_bitboard candidate_outposts[2] = {SQUARE64(C5) | SQUARE64(D5) | SQUARE64
 const t_bitboard color_square_mask[2] = {0x55AA55AA55AA55AA, 0xAA55AA55AA55AA55};
 
 // ----------------------------------------------------------//
+// Futility Margin
+// ----------------------------------------------------------//
+const t_chess_value futility_margin[5] = { 100, 300, 500, 900, 1200 };
+
+// ----------------------------------------------------------//
 // Mobility
 // ----------------------------------------------------------//
 const t_chess_value horizontal_rook_mobility[2][8] = {
@@ -398,8 +398,10 @@ const t_chess_value trapped_rook[2][16] = {
 };
 
 const t_chess_value bishop_mobility[2][16] = {
-    {-50, -40, -10, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26},
-    {-90, -50, -20, 0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48}
+	{ -50, -40, -10, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60 },
+	{ -90, -50, -20, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60 }
+	//{-50, -40, -10, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26},
+	//{ -90, -50, -20, 0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48 }
 };
 
 const t_chess_value queen_mobility[2][32] = {
@@ -425,6 +427,10 @@ t_bitboard king_zone[64];
 
 const t_chess_value king_safety[8] = {0, 0, 64, 96, 113, 120, 124, 128};
 
+// ----------------------------------------------------------//
+// Search
+// ----------------------------------------------------------//
+const int aspiration_window[5] = { 25, 50, 100, 200, CHECKMATE };
 
 // ----------------------------------------------------------//
 // Magics

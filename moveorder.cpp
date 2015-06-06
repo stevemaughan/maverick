@@ -68,7 +68,11 @@ void order_evade_check(struct t_board *board, struct t_move_list *move_list, int
     struct t_move_record *killer3 = NULL;
     struct t_move_record *killer4 = NULL;
 
-    if (ply > 1) {
+	struct t_move_record *refutation = NULL;
+	if (board->pv_data[ply - 1].current_move)
+		refutation = board->pv_data[ply - 1].current_move->refutation;
+
+	if (ply > 1) {
         killer3 = board->pv_data[ply - 2].check_killer1;
         killer4 = board->pv_data[ply - 2].check_killer2;
     }
@@ -87,7 +91,9 @@ void order_evade_check(struct t_board *board, struct t_move_list *move_list, int
             move_list->value[i] = MOVE_ORDER_KILLER1;
         else if (move == killer2)
             move_list->value[i] = MOVE_ORDER_KILLER2;
-        else if (move == killer3)
+		else if (move == refutation)
+			move_list->value[i] = MOVE_ORDER_REFUTATION;        
+		else if (move == killer3)
             move_list->value[i] = MOVE_ORDER_KILLER3;
         else if (move == killer4)
             move_list->value[i] = MOVE_ORDER_KILLER4;
@@ -129,4 +135,8 @@ void update_check_killers(struct t_pv_data *pv, int depth) {
         pv->check_killer1 = pv->current_move;
         pv->current_move->history += (depth * depth);
     }
+
+	if (struct t_pv_data *previous = pv->previous_pv)
+		if (previous->current_move)
+			previous->current_move->refutation = pv->current_move;
 }

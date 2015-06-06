@@ -156,37 +156,42 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
     //-- Null Move
     t_undo undo[1];
     t_chess_value e;
+	pv->mate_threat = 0;
 	pv->null_refutation = NULL;
-    if (can_do_null_move(board, pv, ply, alpha, beta)) {
+	pv->extension = FALSE;
+	if (can_do_null_move(board, pv, ply, alpha, beta)) {
 
 		//-- Calculate Reduction
 		int r = (800 + 70 * depth) / 256 + min(3, (pv->eval->static_score - beta) / 128);
 
-        //-- Make the changes on the board
-        make_null_move(board, undo);
+		//-- Make the changes on the board
+		make_null_move(board, undo);
 
-        //-- Store the move in the PV data
-        pv->current_move = NULL;
+		//-- Store the move in the PV data
+		pv->current_move = NULL;
 
-        //-- Evaluate the new board position
-        evaluate(board, next_pv->eval);
+		//-- Evaluate the new board position
+		evaluate(board, next_pv->eval);
 
-        //-- Find the new score
-        e = -alphabeta(board, ply + 1, depth - r, -beta, -beta + 1);
+		//-- Find the new score
+		e = -alphabeta(board, ply + 1, depth - r, -beta, -beta + 1);
 
-        //-- undo the null move
-        unmake_null_move(board, undo);
+		//-- undo the null move
+		unmake_null_move(board, undo);
 
-        //-- is it good enough for a cut-off?
+		//-- is it good enough for a cut-off?
 		if (e >= beta) {
 			poke(board->hash, e, ply, depth, HASH_LOWER, NULL);
 			assert(e >= -CHECKMATE && e <= CHECKMATE);
 			return e;
 		}
 
-        //-- Is there a Mate Threat after a super-reduced move - if so then exit?
-        if (e < -MAX_CHECKMATE && pv->previous_pv->reduction > 2)
-            return alpha;
+		//-- Is there a Mate Threat after a super-reduced move - if so then exit?
+		if (e < -MAX_CHECKMATE){
+			if (pv->previous_pv->reduction > 1)
+				return alpha;
+			pv->mate_threat = e;
+		}
 
 		//-- Record the move which refuted the NULL move
 		if (ply < MAXPLY)
@@ -212,7 +217,6 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
     }
 
     //-- Generate All Moves
-	pv->extension = FALSE;
     struct t_move_list moves[1];
     moves->hash_move = hash_move;
 
@@ -222,7 +226,8 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
         // Are we in checkmate?
         if (moves->count == 0) {
             pv->best_line_length = ply;
-            return -CHECKMATE + ply;
+			e = -CHECKMATE + ply;
+            return e;
         }
         order_evade_check(board, moves, ply);
     }
@@ -232,15 +237,18 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
     }
 
     //-- Enhanced Transposition Cutoff?
-    if (depth > 4 && !uci.stop) {
+	t_chess_color to_move = board->to_move;
+	if ((depth > 4) && pv->node_type != node_pv && beta < MAX_CHECKMATE && alpha > -MAX_CHECKMATE && !uci.stop) {
         BOOL fail_low;
         while (simple_make_next_move(board, moves, undo)) {
 
-            //-- Is the opponent in check?
-            if (board->in_check)
-                pv->reduction = 0;
-            else
-                pv->reduction = 1;
+            //-- Calculate Reduction Conservatively i.e. assume minimum reduction
+			if (board->in_check)
+				pv->reduction = 0;
+			else if (PIECETYPE(moves->current_move->piece) == PAWN && COLOR_RANK(to_move, moves->current_move->to_square) >= 6)
+				pv->reduction = 0;
+			else
+				pv->reduction = 1;
 
             //-- Simple version of alpha_beta for tips of search
             e = -alphabeta_tip(board, ply + 1, depth - pv->reduction, -beta, &fail_low);
@@ -275,12 +283,12 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
     pv->legal_moves_played = 0;
 
     //-- Variables used to calculate the reduction
-	t_chess_color to_move = board->to_move;
 	t_chess_color opponent = OPPONENT(to_move);
     BOOL in_check = board->in_check;
     struct t_move_record *last_move = NULL;
-    if (ply > 1)
+	if (ply > 1)
         last_move = board->pv_data[ply - 2].current_move;
+
 
     //-- Play moves
     while (!uci.stop && make_next_move(board, moves, bad_moves, undo)) {
@@ -289,50 +297,106 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
         pv->legal_moves_played++;
         pv->current_move = moves->current_move;
 
-        //-- Evaluate the new board position
-        evaluate(board, next_pv->eval);
 
 		//========================================//
 		// Futility Pruning
 		//========================================//
+		if (uci.options.futility_pruning && is_futile(pv, next_pv, depth, a, b)){
+			unmake_move(board, undo);
+			continue;
+		}		
+		
+		//-- Evaluate the new board position
+        evaluate(board, next_pv->eval);
 
 
+		////========================================//
+		//// See if Extension is Necessary
+		////========================================//
+		//pv->extension = FALSE;
+		//if (pv->mate_threat){
+
+		//	e = -alphabeta(board, ply + 1, depth - 1, -CHECKMATE, pv->mate_threat + 2);
+
+		//	pv->extension = (e > pv->mate_threat);
+
+		//	if (e <= pv->mate_threat && e <= a)
+		//	{
+		//		unmake_move(board, undo);
+		//		continue;
+		//	}
+		//}
+			
 		//========================================//
 		// Calculate reduction
 		//========================================//
 
+		struct t_move_record *current_move = pv->current_move;
+
 		//-- In Check?
-		if (board->in_check)
-			pv->reduction = 0;
+		if (board->in_check){
+			if (see_safe(board, current_move->to_square, 0))
+				pv->reduction = 0;
+			else if (ply > 3 && board->pv_data[ply - 1].in_check && board->pv_data[ply - 3].in_check)
+				pv->reduction = 0;
+			else
+				pv->reduction = 1;
+		}
 
 		//-- Pawn push to 7th
-		if (PIECETYPE(moves->current_move->piece) == PAWN && COLOR_RANK(to_move, moves->current_move->to_square) == 6){
-			pv->reduction = 0;
+		else if (PIECETYPE(current_move->piece) == PAWN && COLOR_RANK(to_move, current_move->to_square) >= 6){
+			
+			//-- Pawn Promotion
+			if (current_move->promote_to){
+				
+				if (pv->legal_moves_played == 1 || PIECETYPE(current_move->promote_to) == QUEEN){
+
+					//--Extend if it's a safe pawn promotion or first move
+					if ((pv->current_move->captured && moves->current_move_see_positive) || see_safe(board, current_move->to_square, 0))
+						pv->reduction = 0;
+					else
+						pv->reduction = 1;
+				}
+
+				// Reduce Heavily if not a queen promotion
+				else
+					pv->reduction = 5;
+			}
+
+			//-- Push to the 7th
+			else if (pv->legal_moves_played == 1 || (pv->current_move->captured && moves->current_move_see_positive) || see_safe(board, current_move->to_square, 0))
+				pv->reduction = 0;
+			else
+				pv->reduction = 1;
+
 		}
 
 		//-- First Move?
 		else if (pv->legal_moves_played == 1)
 			pv->reduction = 1;
 
-		//-- Is this getting out of check?
-		else if (in_check)
-			pv->reduction = 1;
-
 		//-- Good Capture?
 		else if (pv->current_move->captured && moves->current_move_see_positive){
-
-			////-- Did it simply capture the opponents last piece that moved?
-			//if ((previous_pv->current_move != NULL) && (previous_pv->current_move->to_square == moves->current_move->to_square) && !(previous_pv->current_move->captured) && (previous_pv->legal_moves_played > 2))
-			//	pv->reduction = 4;
-
-			////-- No, it really is a good capture!
-			//else
 			pv->reduction = 1;
 		}
-		//-- Same piece moved as last time
-		//else if (ply > 1 && pv->previous_pv->previous_pv->current_move && pv->previous_pv->previous_pv->current_move->to_square == pv->current_move->from_square){
-		//	pv->reduction = 1;
-		//}
+
+		//-- Is this getting out of check?
+		else if (in_check){
+			if (pv->current_move == pv->check_killer1 || pv->current_move == pv->check_killer2)
+				pv->reduction = 1;
+			else if (PIECETYPE(current_move->piece) == KING){
+				if (CAN_CASTLE(to_move, board->castling))
+					pv->reduction = 4;
+				else
+					pv->reduction = 1;
+			}
+			else if (current_move->captured) /* must be a bad capture */
+				pv->reduction = 2;
+			else if (see_safe(board, current_move->to_square, 0))
+				pv->reduction = 1;
+			else
+				pv->reduction = 2;
+		}
 
 		//-- Don't reduce Killers!
 		else if (pv->current_move == pv->killer1 || pv->current_move == pv->killer2){
@@ -340,20 +404,58 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 		}
 
 		//-- Does it move a threatened piece?
-		else if (pv->null_refutation != NULL && pv->null_refutation->to_square == pv->current_move->from_square)
-			pv->reduction = 1;
+		else if (pv->null_refutation != NULL && pv->null_refutation->to_square == pv->current_move->from_square){
+
+			if (see_safe(board, current_move->to_square, 0))
+				pv->reduction = 1;
+			else
+				pv->reduction = 3;
+		}
 
 		//-- Candidate for serious reductions
 		else{
+
+			////-- How Good or Bad is the Move
+			//int bad_score = 0;
+			//
+			////-- Is the piece about to be captured
+			//if (current_move->captured || !see_safe(board, current_move->to_square, 0))
+			//	bad_score += 7;
+
+			////-- Does the move reduce the score?
+			//if (pv->eval->static_score >= -next_pv->eval->static_score)
+			//	bad_score += 10;
+
+			////-- Does the move make the king unsafe
+			//if (pv->eval->king_attack[to_move] >= next_pv->eval->king_attack[to_move])
+			//	bad_score += 5;
+
+			////-- Does the move reduce the pressure on the oppoent's king 
+			//if (pv->eval->king_attack[opponent] >= next_pv->eval->king_attack[opponent])
+			//	bad_score += 3;
+
+			////-- Have there been many moves already played
+			//if (pv->legal_moves_played > 3){
+			//	bad_score += 2;
+			//	if (pv->legal_moves_played > 10){
+			//		bad_score += 3;
+			//		if (pv->legal_moves_played > 20)
+			//			bad_score += 4;
+			//	}
+			//}
 
 			switch (pv->node_type)
 			{
 			case node_cut:
 				pv->reduction = 3;
+				if (pv->current_move->captured)
+					pv->reduction += 1; 
 				break;
 
 			case node_super_cut:
 				pv->reduction = 4;
+				if (pv->current_move->captured)
+					pv->reduction += 1; 
 				break;
 
 			case node_pv:
@@ -368,23 +470,91 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 					pv->reduction = 2;
 				else
 					pv->reduction = 1;
+				
+				if (pv->current_move->captured)
+					pv->reduction += 1;				
 				break;
 
 			case node_super_all:
-				pv->reduction = 3;
+				if (current_move->captured){
+					if (pv->legal_moves_played < 4)
+						pv->reduction = 3;
+					else
+						pv->reduction = 4;
+				}
+				else if (!see_safe(board, current_move->to_square, 0)){
+					if (pv->legal_moves_played < 4)
+						pv->reduction = 4;
+					else if (pv->legal_moves_played < 12)
+						pv->reduction = 5;
+					else 
+						pv->reduction = 6;
+				}
+				else if (pv->legal_moves_played < 4)
+					pv->reduction = 2;
+				else if (pv->legal_moves_played < 12)
+					pv->reduction = 3;
+				else
+					pv->reduction = 4;
 				break;
 
 			case node_all:
-				if (pv->legal_moves_played > 4)
+				if (current_move->captured){
+					if (pv->legal_moves_played < 4)
+						pv->reduction = 3;
+					else 
+						pv->reduction = 4;
+				}
+				else if (!see_safe(board, current_move->to_square, 0)){
+					if (pv->legal_moves_played < 4)
+						pv->reduction = 4;
+					else 
+						pv->reduction = 5;
+				}
+				else if (pv->legal_moves_played < 4)
+					pv->reduction = 2;
+				else if (pv->legal_moves_played < 18)
 					pv->reduction = 3;
 				else
-					pv->reduction = 2;
+					pv->reduction = 4;
 				break;
+
+				//if (pv->legal_moves_played > 4)
+				//	pv->reduction = 3;				
+				//else if (current_move->captured || !see_safe(board, current_move->to_square, 0))
+				//	pv->reduction = 4;
+				//else
+				//	pv->reduction = 2;
+				//break;
 			}
 
-			//-- Reduce losing captures even more
-			if (pv->current_move->captured)
-				pv->reduction += 1;
+			//switch (pv->node_type)
+			//{
+			//case node_cut:
+			//	pv->reduction = max(1, bad_score / 2);
+			//	break;
+
+			//case node_super_cut:
+			//	pv->reduction = max(1, bad_score / 2);
+			//	break;
+
+			//case node_pv:
+			//	pv->reduction = max(1, bad_score / 7);
+			//	break;
+
+			//case node_lite_all:
+			//	pv->reduction = max(1, bad_score / 4);
+			//	break;
+
+			//case node_super_all:
+			//	pv->reduction = max(1, bad_score / 4);
+			//	break;
+
+			//case node_all:
+			//	pv->reduction = max(1, bad_score / 3);
+			//	break;
+			//}
+
 		}
 
         //-- Search the next ply at reduced depth
@@ -436,6 +606,9 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 
         // Reset the zero width window
         b = a + 1;
+
+		//-- Was this a fail low at a node which should have failed high?
+		//if (pv->node_type == )
     }
 
     //-- Is it a draw

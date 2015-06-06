@@ -125,7 +125,7 @@ struct t_hash_record *probe(t_hash hash_key)
     do {
         if (h->key == hash_key) {
             hash_hits++;
-            assert(h->score < CHECKMATE && h->score > -CHECKMATE);
+			assert(h->score <= CHECKMATE && h->score >= -CHECKMATE);
             return h;
         }
         i++;

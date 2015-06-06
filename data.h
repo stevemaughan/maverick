@@ -44,9 +44,6 @@ extern t_nodes global_nodes;
 extern long perft_start_time;
 extern long perft_end_time;
 
-// Aspiration Window
-extern const t_chess_value aspiration_window[2][6];
-
 // x88 Constants
 extern const BOOL slider[15];
 extern const char direction[15][10];
@@ -110,6 +107,9 @@ extern t_bitboard cannot_catch_pawn_mask[2][2][64];
 extern const t_bitboard candidate_outposts[2];
 extern const t_bitboard color_square_mask[2];
 
+//-- Futility
+extern const t_chess_value futility_margin[5];
+
 //-- Mobility
 extern const t_chess_value horizontal_rook_mobility[2][8];
 extern const t_chess_value vertical_rook_mobility[2][8];
@@ -129,6 +129,9 @@ extern t_bitboard pawn_wedge_mask[2][2];
 extern const t_chess_value pawn_storm[8];
 extern t_bitboard king_zone[64];								// Square around the king which are used in the king safety evaluation
 extern const t_chess_value king_safety[8];
+
+//-- Search
+extern const int aspiration_window[5];
 
 // Magics
 extern t_bitboard rook_magic_moves[64][4096];

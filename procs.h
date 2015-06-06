@@ -120,7 +120,7 @@ void evaluate_king_pawn_endgame(struct t_board *board, struct t_pawn_hash_record
 
 //-- Static Exchange Evaluation (see.cpp)
 BOOL see(struct t_board *board, struct t_move_record *move, t_chess_value threshold);
-BOOL see_square(struct t_board *board, t_chess_square to_square, t_chess_value threshold);
+BOOL see_safe(struct t_board *board, t_chess_square to_square, t_chess_value threshold);
 
 //-- Root Search (root.c)
 void root_search(struct t_board *board);
@@ -130,6 +130,9 @@ t_chess_value alphabeta(struct t_board *board, int ply, int depth, t_chess_value
 t_chess_value qsearch_plus(struct t_board *board, int ply, int depth, t_chess_value alpha, t_chess_value beta);
 t_chess_value qsearch(struct t_board *board, int ply, int depth, t_chess_value alpha, t_chess_value beta);
 t_chess_value alphabeta_tip(struct t_board *board, int ply, int depth, t_chess_value alpha, BOOL *fail_low);
+
+//-- Futility
+BOOL is_futile(struct t_pv_data *pv, struct t_pv_data *next_pv, int depth, t_chess_value alpha, t_chess_value beta);
 
 //--Generate Moves
 void generate_legal_moves(struct t_board *board, struct t_move_list *move_list);

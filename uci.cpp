@@ -233,9 +233,13 @@ void uci_set_mode()
     sprintf(s, "option name UCI_EngineAbout type string default Maverick %s by Steve Maughan www.chessprogramming.net", ENGINE_VERSION);
     send_command(s);
 
-    strcpy(s, "option name Show Search Statistics type check default true");
-    uci.options.show_search_statistics = TRUE;
-    send_command(s);
+	strcpy(s, "option name Show Search Statistics type check default true");
+	uci.options.show_search_statistics = TRUE;
+	send_command(s);
+
+	strcpy(s, "option name Futility Pruning type check default false");
+	uci.options.futility_pruning = FALSE;
+	send_command(s);
 
     strcpy(s, "uciok");
     send_command(s);
@@ -390,13 +394,21 @@ void uci_setoption(char *s)
         return;
     }
 
-    if((index_of("Statistics", s) == 4) || (index_of("statistics", s) == 4) || (index_of("STATISTICS", s) == 4)) {
-        if (!strcmp(word_index(6, s), "true") || !strcmp(word_index(6, s), "TRUE"))
-            uci.options.show_search_statistics = TRUE;
-        else
-            uci.options.show_search_statistics = FALSE;
-        return;
-    }
+	if ((index_of("Statistics", s) == 4) || (index_of("statistics", s) == 4) || (index_of("STATISTICS", s) == 4)) {
+		if (!strcmp(word_index(6, s), "true") || !strcmp(word_index(6, s), "TRUE"))
+			uci.options.show_search_statistics = TRUE;
+		else
+			uci.options.show_search_statistics = FALSE;
+		return;
+	}
+
+	if ((index_of("Futility", s) == 2) || (index_of("futility", s) == 2) || (index_of("FUTILITY", s) == 2)) {
+		if (!strcmp(word_index(5, s), "true") || !strcmp(word_index(5, s), "TRUE"))
+			uci.options.show_search_statistics = TRUE;
+		else
+			uci.options.show_search_statistics = FALSE;
+		return;
+	}
 
 }
 
