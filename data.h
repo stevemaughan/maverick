@@ -131,7 +131,7 @@ extern t_bitboard king_zone[64];								// Square around the king which are used
 extern const t_chess_value king_safety[8];
 
 //-- Search
-extern const int aspiration_window[5];
+extern const int aspiration_window[6];
 
 // Magics
 extern t_bitboard rook_magic_moves[64][4096];

@@ -118,25 +118,30 @@ void age_history_scores()
 
 void update_killers(struct t_pv_data *pv, int depth) {
 
-    if (!pv->current_move->captured && (pv->current_move != pv->killer1)) {
-        pv->killer2 = pv->killer1;
-        pv->killer1 = pv->current_move;
-        pv->current_move->history += (depth * depth);
-    }
 
-    if (struct t_pv_data *previous = pv->previous_pv)
-        if (previous->current_move)
-            previous->current_move->refutation = pv->current_move;
+	if (!pv->current_move->captured){
+		if (pv->current_move != pv->killer1) {
+			pv->killer2 = pv->killer1;
+			pv->killer1 = pv->current_move;
+			pv->current_move->history += (depth * depth);
+		}
+
+		if (struct t_pv_data *previous = pv->previous_pv)
+			if (previous->current_move)
+				previous->current_move->refutation = pv->current_move;
+	}
 }
 
 void update_check_killers(struct t_pv_data *pv, int depth) {
-    if (!pv->current_move->captured && (pv->current_move != pv->check_killer1)) {
-        pv->check_killer2 = pv->check_killer1;
-        pv->check_killer1 = pv->current_move;
-        pv->current_move->history += (depth * depth);
-    }
+	if (!pv->current_move->captured){
+		if (pv->current_move != pv->check_killer1) {
+			pv->check_killer2 = pv->check_killer1;
+			pv->check_killer1 = pv->current_move;
+			pv->current_move->history += (depth * depth);
+		}
 
-	if (struct t_pv_data *previous = pv->previous_pv)
-		if (previous->current_move)
-			previous->current_move->refutation = pv->current_move;
+		if (struct t_pv_data *previous = pv->previous_pv)
+			if (previous->current_move)
+				previous->current_move->refutation = pv->current_move;
+	}
 }

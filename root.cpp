@@ -64,7 +64,7 @@ void root_search(struct t_board *board)
     message_update_count = 0;
     search_start_time = time_now();
     search_start_draw_stack_count = draw_stack_count;
-    t_chess_value best_score;
+	t_chess_value best_score = -CHESS_INFINITY;
 
     //-- Write the whole tree to a file!
     //write_tree(board, NULL, FALSE, "tree.txt");
@@ -121,7 +121,8 @@ void root_search(struct t_board *board)
             //-- Evaluate the new position
             evaluate(board, board->pv_data[1].eval);
 
-            if (board->in_check)
+			//-- Extend for checks
+			if (board->in_check && see_safe(board, pv->current_move->to_square, 0))
                 pv->reduction = 0;
             else
                 pv->reduction = 1;

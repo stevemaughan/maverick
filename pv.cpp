@@ -100,14 +100,65 @@ BOOL research_required(struct t_board *board, struct t_multi_pv *mpv, int index,
     return FALSE;
 }
 
-void get_bounds(struct t_multi_pv *mpv, int index, int fail_high_count, int fail_low_count, t_chess_value *alpha, t_chess_value *beta) {
+void get_bounds(t_chess_value base_score, int moves_played, int fail_high_count, int fail_low_count, t_chess_value *alpha, t_chess_value *beta) {
 
-    //if (index >= mpv->count){
-    //	*alpha = mpv->pv[mpv->count - 1].score;
-    //	*beta = *alpha + 1 + aspiration_window[fail_high_count];
-    //}
-    //else{
-    //	*alpha = mpv->pv[index].score - aspiration_window[fail_low_count];
-    //	*beta = mpv->pv[index].score + aspiration_window[fail_high_count];
-    //}
+	//-- First Move, so need to resolve
+	if (moves_played == 1){
+
+		//-- Main search has failed high and low - so search +/- INF
+		if (fail_high_count * fail_low_count != 0){
+			*alpha = -CHECKMATE;
+			*beta = CHECKMATE;
+		}
+
+		//-- Checkmate found
+		else if (base_score >= MAX_CHECKMATE){
+			*alpha = base_score - 2;
+			*beta = CHECKMATE;
+		}
+
+		else if (base_score <= -MAX_CHECKMATE){
+			*alpha = -CHECKMATE;
+			*beta = base_score + 2;
+		}
+
+		//-- Fail High
+		else if (fail_high_count){
+			if (fail_high_count >= 4)
+				*beta = CHECKMATE;
+			else
+				*beta = base_score + aspiration_window[fail_high_count];
+		}
+
+		//-- Fail Low
+		else if (fail_low_count){
+			if (fail_low_count >= 4)
+				*alpha = -CHECKMATE;
+			else
+				*alpha = base_score - aspiration_window[fail_low_count];
+		}
+
+		else{
+			*alpha = -CHECKMATE;
+			*beta = CHECKMATE;
+		}
+
+	}
+
+	//-- Other Moves so only need to resolve fail high
+	else{
+
+		//-- Normal move
+		if (fail_high_count == 0){
+			*alpha = base_score;
+			*beta = base_score + 1;
+		}
+
+		//-- Fail high
+		else if (fail_high_count >= 4)
+			*beta = CHECKMATE;
+		else
+			*beta = base_score + aspiration_window[fail_high_count];
+		
+	}
 }
