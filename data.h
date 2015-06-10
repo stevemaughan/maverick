@@ -132,6 +132,7 @@ extern const t_chess_value king_safety[8];
 
 //-- Search
 extern const int aspiration_window[6];
+extern int reduction[64][64];
 
 // Magics
 extern t_bitboard rook_magic_moves[64][4096];

@@ -24,8 +24,10 @@ void order_moves(struct t_board *board, struct t_move_list *move_list, int ply) 
     struct t_move_record *killer3 = NULL;
     struct t_move_record *killer4 = NULL;
 
-
     struct t_move_record *refutation = NULL;
+
+	t_nodes max_history = 0;
+
     if (board->pv_data[ply - 1].current_move)
         refutation = board->pv_data[ply - 1].current_move->refutation;
 
@@ -38,6 +40,10 @@ void order_moves(struct t_board *board, struct t_move_list *move_list, int ply) 
     {
         move = move_list->move[i];
 		assert(move);
+
+		if (move->history > max_history)
+			max_history = move->history;
+
         if (move == hash_move) {
             move_list->value[i] = MOVE_ORDER_HASH;
         }
@@ -57,6 +63,7 @@ void order_moves(struct t_board *board, struct t_move_list *move_list, int ply) 
         else
             move_list->value[i] = move->history;
     }
+	move_list->history_theshold = max_history / 10;
 }
 
 void order_evade_check(struct t_board *board, struct t_move_list *move_list, int ply) {
@@ -77,11 +84,17 @@ void order_evade_check(struct t_board *board, struct t_move_list *move_list, int
         killer4 = board->pv_data[ply - 2].check_killer2;
     }
 
-    for (int i = move_list->count - 1; i >= 0; i--)
+	t_nodes max_history = 0;
+	
+	for (int i = move_list->count - 1; i >= 0; i--)
     {
         move = move_list->move[i];
 		assert(move);
-        if (move == hash_move) {
+
+		if (move->history > max_history)
+			max_history = move->history;
+
+		if (move == hash_move) {
             move_list->value[i] = MOVE_ORDER_HASH;
         }
         else if (move->captured) {
@@ -100,6 +113,7 @@ void order_evade_check(struct t_board *board, struct t_move_list *move_list, int
         else
             move_list->value[i] = move->history;
     }
+	move_list->history_theshold = max_history / 10;
 }
 
 void order_captures(struct t_board *board, struct t_move_list *move_list) {

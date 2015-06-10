@@ -131,6 +131,9 @@ t_chess_value qsearch_plus(struct t_board *board, int ply, int depth, t_chess_va
 t_chess_value qsearch(struct t_board *board, int ply, int depth, t_chess_value alpha, t_chess_value beta);
 t_chess_value alphabeta_tip(struct t_board *board, int ply, int depth, t_chess_value alpha, BOOL *fail_low);
 
+//-- Reductions.cpp
+void init_reduction();
+
 //-- Futility
 BOOL is_futile(struct t_pv_data *pv, struct t_pv_data *next_pv, int depth, t_chess_value alpha, t_chess_value beta);
 

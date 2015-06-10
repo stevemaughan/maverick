@@ -901,6 +901,7 @@ BOOL make_next_move(struct t_board *board, struct t_move_list *move_list, struct
             //-- Store the move
             move_list->current_move = move;
             move_list->current_move_see_positive = TRUE;
+			move_list->current_move_score = best_value;
 
             //-- Make move on board
             if (make_move(board, move_list->pinned_pieces, move, undo))
@@ -944,6 +945,7 @@ BOOL make_next_move(struct t_board *board, struct t_move_list *move_list, struct
         //-- Store the move
         move_list->current_move = move;
         move_list->current_move_see_positive = FALSE;
+		move_list->current_move_score = best_value;
 
         //-- Make move on board
         if (make_move(board, move_list->pinned_pieces, move, undo))

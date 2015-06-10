@@ -195,8 +195,10 @@ struct t_move_list
     int										imove;							// This starts at "count" and is decremented as the moves are played
     struct t_move_record					*current_move;					// The move last played
     BOOL									current_move_see_positive;		// True if the current capture is NOT see negative
+	t_chess_value							current_move_score;				// Score of the current move
     struct t_move_record					*hash_move;						// The hash move
     t_bitboard								pinned_pieces;					// A bitboard which stores the position of pinned pieces
+	t_nodes									history_theshold;				// The threshold for a reduction
     struct t_move_record					*move[256];						// The moves!
     signed long long						value[256];						// Notional values for all of the moves
 };
@@ -405,7 +407,7 @@ struct t_uci_thinking
 struct t_uci_opening_book
 {
     BOOL									use_own_book;
-    char									filename[FILENAME_MAX];
+    char									filename[2048];
     FILE									*f;
     int										book_size;
 };

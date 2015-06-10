@@ -726,8 +726,8 @@ BOOL test_search()
 
 	uci_new_game(position);
 
-	uci_position(position, "position fen rbbqnknr/pppppppp/8/8/8/8/PPPPPPPP/RBBQNKNR w HAha - moves c2c4 c7c5 g1f3 e7e5 b1e4 e8d6 d2d3 d6e4 d3e4 g8e7 c1e3 b7b6 d1d3 c8b7 a1d1 b7c6 g2g4 f7f6 h1g1 h7h5 e3d2 h5g4 g1g4 d8c8 g4g2 c8a6 a2a3 b6b5 c4b5 c6b5 d3e3 d7d6 d1c1 b8c7 h2h4 a6b7 b2b4 c7b6 a3a4 b5a4 b4c5 b6c5 e3d3 a4b5 d3c2 a7a5 d2c3 a8c8 c2b2 b5c6");
-	uci_go("go depth 6");
+	uci_position(position, "position fen 4r1k1/p1qr1p2/2pb1Bp1/1p5p/3P1n1R/1B3P2/PP3PK1/2Q4R w - -");
+	uci_go("go depth 12");
 
 	while (uci.engine_state != UCI_ENGINE_WAITING)
 		Sleep(1);

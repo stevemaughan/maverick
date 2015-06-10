@@ -955,6 +955,7 @@ void init_engine(struct t_board *board)
         init_magic();
         init_can_move();
         init_material_hash();
+		init_reduction();
         uci.engine_initialized = TRUE;
     }
 };
